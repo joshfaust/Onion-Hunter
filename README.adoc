@@ -3,6 +3,10 @@ Joshua.Faust@sevrosecurity.com
 :toc:
 :toclevels: 3
 
+image:https://img.shields.io/github/license/cribdragg3r/Onion-Hunter["GitHub license",link="https://github.com/cribdragg3r/Onion-Hunter/blob/master/LICENSE.md"]
+image:https://img.shields.io/github/issues/cribdragg3r/Onion-Hunter["GitHub issues",link="https://github.com/cribdragg3r/Onion-Hunter/issues"]
+image:docs/versions.svg["Python Versions"]
+
 +++
 <a href ="https://sevrosecurity.com">
   <img src="docs/tor-icon.png"
@@ -84,6 +88,8 @@ Figure 2. Purging the Database
 
 1. Add a reporting class to help cleaning digest the SQL database into a CSV or Excel document.
 ** Possibly use Pandas for report generation.
+
+---
 
 ### Contact
 
