@@ -1,2 +1,69 @@
-# Onion-Hunter
-Hunt and Analyze Tor Onion Sites
+= Onion-Hunter
+Joshua.Faust@sevrosecurity.com
+:toc:
+:toclevels: 3
+
+image::docs/tor_icon.jpg[float="left",100]
+
+### About
+This package is designed to help anyone hunt for Onion addresses subject to a set of keywords set by the user. The primary
+design characteristic is to enable the user to define attributes/keywords that they would like to hunt on. All customizable
+attributes are located within the `src/config.py` python file. This is the only object that should be edited by the user.
+
+---
+### Requirements
+
+* *Python Version:* Python 3+
+* *Packages:* See Requirements.txt
+* *Tor:* Must be able to route traffic via a Tor Proxy
+** Windows: I like Nord VPN's Onion VPN or the https://github.com/basil00/TorWall[Open Source Tallow Project]
+** Linux: TBD - Still Need to Test.
+
+---
+
+### Usage
+
+Before running `Hunt.py` for the first time, please follow these steps:
+
+* Install all requirements:
+
+`pip install -r requirements.txt`
+
+* Create a https://www.reddit.com/prefs/apps[Reddit API Token]
+* Add Reddit API objects to `src/config.py`
+
+[source, python]
+----
+self.r_username = ""
+self.r_password = ""
+self.r_client_id = ""
+self.r_client_secret = ""
+self.r_user_agent = ""
+----
+
+* Add Keywords to Hunt on to `src/config.py`
+
+[source, python]
+----
+self.keywords = ["Example_keyword_1", "drugs"]
+----
+
+#### Examples
+
+[source, text]
+----
+λ python Hunt.py -h
+usage: Hunt.py [-h] [-s | -p | -c]
+
+optional arguments:
+  -h, --help   show this help message and exit
+  -s, --scan   Scan All The Things
+  -p, --purge  Purge the whole database
+  -c, --clean  Cleanup the DB
+----
+
+image::docs/hunting.PNG[align=center, title-align=center, title=Reddit Search]
+image::docs/purge.PNG[align=center, title-align=center, title=Reddit Search]
+
+---
+### Continuing Work
