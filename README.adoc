@@ -3,12 +3,18 @@ Joshua.Faust@sevrosecurity.com
 :toc:
 :toclevels: 3
 
-image::docs/tor_icon.jpg[float="left",100]
++++
+<a href ="https://sevrosecurity.com">
+  <img src="docs/tor_icon.jpg"
+    title="Simple-Loader" align="left" height=100 length=100 />
+    </a>
++++
 
 ### About
 This package is designed to help anyone hunt for Onion addresses subject to a set of keywords set by the user. The primary
 design characteristic is to enable the user to define attributes/keywords that they would like to hunt on. All customizable
 attributes are located within the `src/config.py` python file. This is the only object that should be edited by the user.
+
 
 ---
 ### Requirements
@@ -61,9 +67,11 @@ optional arguments:
   -p, --purge  Purge the whole database
   -c, --clean  Cleanup the DB
 ----
-
-image::docs/hunting.PNG[align=center, title-align=center, title=Reddit Search]
-image::docs/purge.PNG[align=center, title-align=center, title=Reddit Search]
-
++++
+<center>
+<img src="docs/hunting.PNG" title="Simple-Loader" align="center" height=300 length=300 />
+<img src="docs/purge.PNG" title="Simple-Loader" align="center" height=100 length=100 />
+</center>
++++
 ---
 ### Continuing Work
