@@ -19,6 +19,8 @@ This package is designed to help anyone hunt for Onion addresses subject to a se
 design characteristic is to enable the user to define attributes/keywords that they would like to hunt on. All customizable
 attributes are located within the `src/config.py` python file. This is the only object that should be edited by the user.
 
+For details about the Onion-Hunter Classes and API, please visit https://github.com/cribdragg3r/Onion-Hunter/wiki[The Wiki]
+
 
 ---
 ### Requirements
@@ -55,7 +57,7 @@ self.r_user_agent = ""
 
 [source, python]
 ----
-self.keywords = ["Example_keyword_1", "drugs"]
+self.keywords = ["Example_keyword_1", "Example_keyword_2"]
 ----
 
 #### Examples
