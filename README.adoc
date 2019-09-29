@@ -67,11 +67,19 @@ optional arguments:
   -p, --purge  Purge the whole database
   -c, --clean  Cleanup the DB
 ----
+
 +++
+
 <center>
 <img src="docs/hunting.PNG" title="Simple-Loader" align="center" height=300 length=300 />
+Figure 1. Reddit Search
+<br>
+<br>
 <img src="docs/purge.PNG" title="Simple-Loader" align="center" height=100 length=100 />
+Figure 2. Purging the Database
 </center>
+
 +++
+
 ---
 ### Continuing Work
