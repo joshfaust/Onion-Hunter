@@ -50,6 +50,7 @@ class db_manager:
         self.conn = sqlite3.connect(self.databaseFile)
         self.cur = self.conn.cursor()
 
+    # Deletes all data from the DB and resets the tables index values
     def deleteAll(self):
         try:
             cmd0 = "delete from sqlite_sequence"
@@ -68,17 +69,6 @@ class db_manager:
         except Exception as e:
             print(e)
             exit(0)
-
-    # Checks if we have logge a reddit ID is
-    def CheckRedditSubmissionID(self, id):
-        cmd = f"select count(*) FROM COMMENTS where COM_ID = '{str(id)}'"
-        self.cur.execute(cmd)
-        data = self.cur.fetchone()[0]
-
-        if (data > 0):
-            return False
-        else:
-            return True  # true means were good to enter in more data.
 
     # Insert into the ONIONS table
     def onionsInsert(self, DS, URI, DH, KM, KMS, IS):
