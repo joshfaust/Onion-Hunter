@@ -5,7 +5,7 @@ Joshua.Faust@sevrosecurity.com
 
 +++
 <a href ="https://sevrosecurity.com">
-  <img src="docs/tor_icon.jpg"
+  <img src="docs/tor-icon.png"
     title="Simple-Loader" align="left" height=100 length=100 />
     </a>
 +++
@@ -81,3 +81,20 @@ Figure 2. Purging the Database
 
 ---
 ### Continuing Work
+
+1. Add a reporting class to help cleaning digest the SQL database into a CSV or Excel document.
+** Possibly use Pandas for report generation.
+
+### Contact
+
+++++
+<a href ="https://twitter.com/JFaust0">
+  <img src="https://cdn.icon-icons.com/icons2/800/PNG/512/_twitter_icon-icons.com_65787.png"
+    title="Twitter (@JFaust0)" align="left" height=50 length=50 />
+    </a>
+
+<a href ="https://sevrosecurity.com">
+	<img src="https://sevrosecurity.com/wp-content/uploads/2019/09/ss_icon.png"
+    	title="SevroSecurity.com" align="left" height=50 length=50 />
+    </a>
+++++
