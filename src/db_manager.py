@@ -152,16 +152,51 @@ class db_manager:
             for hash in hash_list:
                 hash = str(hash).split("'")[1]
 
-                # Pull the source code from the ONIONS table
-                cmd1 = f"SELECT INDEX_SOURCE FROM ONIONS WHERE DOMAIN_HASH = '{hash}'"
+                cmd1 = f"SELECT URI FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH = '{hash}'"
                 self.cur.execute(cmd1)
+                uri = self.cur.fetchone()
+
+                # Pull the source code from the ONIONS table
+                cmd2 = f"SELECT INDEX_SOURCE FROM ONIONS WHERE DOMAIN_HASH = '{hash}'"
+                self.cur.execute(cmd2)
                 source = str(self.cur.fetchone()).split("'")[1].replace("\\n", "")
                 decoded_source = base64.decodebytes(source.encode("utf-8"))
 
                 onion_addresses = UTIL.getOnions(str(decoded_source))
 
-                if (len(onion_addresses) < 50):
+                if (len(onion_addresses) < 50 or "facebook" in str(uri).lower() or "nytimes" in str(uri).lower()):
                     cmd2 = f"DELETE FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH = '{hash}'"
+                    self.conn.execute(cmd2)
+                    self.conn.commit()
+                    deleted_index += 1
+
+            self.cleanupOnions()
+            print(f"\t[i] Deleted {deleted_index} Fresh Onions Sources")
+
+        except Exception as e:
+            print(f"[!] Cleanup ERROR: {e}")
+            pass
+
+    # Simply removes any onions that have the following attributes:
+    # - Has less than 50 onions on a single GET request
+    def cleanupOnions(self):
+        try:
+            deleted_index = 0
+
+            # Get all of the hashes for the
+            cmd0 = "SELECT DOMAIN_HASH FROM ONIONS"
+            self.cur.execute(cmd0)
+            hash_list = self.cur.fetchall()
+
+            for hash in hash_list:
+                hash = str(hash).split("'")[1]
+
+                cmd1 = f"SELECT URI FROM ONIONS WHERE DOMAIN_HASH = '{hash}'"
+                self.cur.execute(cmd1)
+                uri = self.cur.fetchone()
+
+                if ("facebook" in str(uri).lower() or "nytimes" in str(uri).lower()):
+                    cmd2 = f"DELETE FROM ONIONS WHERE DOMAIN_HASH = '{hash}'"
                     self.conn.execute(cmd2)
                     self.conn.commit()
                     deleted_index += 1
@@ -171,7 +206,7 @@ class db_manager:
             self.conn.commit()
             self.conn.close()
 
-            print(f"[i] Database Cleanup Complete:\n\t[i] Deleted {deleted_index} Fresh Onions Sources")
+            print(f"[i] Database Cleanup Complete:\n\t[i] Deleted {deleted_index} Garbage Onions")
 
         except Exception as e:
             print(f"[!] Cleanup ERROR: {e}")

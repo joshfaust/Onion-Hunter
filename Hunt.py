@@ -87,6 +87,11 @@ def redditScraper():
                     # Iterate through each link found.
                     pbar = tqdm(total=len(sub_links), desc=f"Analysing {len(sub_links)} new Onions")
                     for link in sub_links:
+
+                        # Database was becoming overwhelmed with stupid URI's
+                        if ("facebook" in link.lower() or "nytimes" in link.lower()):
+                            break
+
                         domain_hash = UTIL.getSHA256(link)
 
                         # If this is a new domain we do not have categorized, continue
