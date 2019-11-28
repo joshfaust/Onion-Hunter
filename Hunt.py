@@ -90,6 +90,7 @@ def redditScraper():
 
                         # Database was becoming overwhelmed with stupid URI's
                         if ("facebook" in link.lower() or "nytimes" in link.lower()):
+                            pbar.update(1)
                             break
 
                         domain_hash = UTIL.getSHA256(link)
