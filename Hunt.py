@@ -58,8 +58,10 @@ def reddit_login():
 # Scans pre-defined sub-reddits      #
 # ===================================#
 def redditScraper():
-    i = 0  # Index counter for each matched word
-    matches = []  # Array to keep matched words.
+
+    i = 0               # Index counter for each matched word
+    timeout_index = 0   # Index counter for timout domains
+    matches = []        # Array to keep matched words.
     r = reddit_login()
 
     for sub in CONFIG.sub_reddits:
@@ -129,6 +131,30 @@ def redditScraper():
                         i = 0  # Reset Index Counter for each link
                         matches.clear()  # Reset keywords for each link.
 
+                        # Check timout counter:
+                        if (timeout_index >= 5):
+                            con_attempts = 0
+                            print("[!] We have had 5 timeouts. Checking to see if we're still connected to TOR")
+
+                            if (UTIL.isTorEstablished() == False):
+                                print("[!] NOT Connected to TOR. Please Re-connect.")
+                                print("[i] Sleeping for 30 seconds then checking again")
+                                time.sleep(30)
+
+                                while (UTIL.isTorEstablished() == False):
+                                    print("[i] Sleeping for 30 seconds then checking again")
+                                    time.sleep(30)
+                                    con_attempts += 1
+
+                                    if (con_attempts >= 15):
+                                        print("[!] 15 Attempts to Re-Connected Failed. Exiting.")
+                                        exit(1)
+                                # Reset the index
+                                timeout_index = 0
+                            else:
+                                print("[i] We're still connected, continuing")
+                                timeout_index = 0
+
                     pbar.close()
 
         except Exception as e:
@@ -142,8 +168,9 @@ def redditScraper():
 def freshOnionsScraper():
     print(f"[i] Starting Fresh Onion Searches")
 
-    i = 0  # Index counter for each matched word
-    matches = []  # Array to keep matched words.
+    i = 0               # Index counter for each matched word
+    timeout_index = 0   # Index counter for timout domains
+    matches = []        # Array to keep matched words.
     domains = DB.getFreshOnionDomains()
 
     # Iterate through the known Fresh Onions domains/lists
@@ -188,6 +215,7 @@ def freshOnionsScraper():
 
                             DB.onionsInsert(origin_address, new_address, domain_hash,
                                             "timeout", "timeout", "timeout")
+                            timeout_index += 1
                             pbar.update(1)
 
                     else:
@@ -195,6 +223,30 @@ def freshOnionsScraper():
 
                     i = 0  # Reset Index Counter for each link
                     matches.clear()  # Reset keywords for each link.
+
+                    # Check timout counter:
+                    if (timeout_index >= 5):
+                        con_attempts = 0
+                        print("[!] We have had 5 timeouts. Checking to see if we're still connected to TOR")
+
+                        if (UTIL.isTorEstablished() == False):
+                            print("[!] NOT Connected to TOR. Please Re-connect.")
+                            print("[i] Sleeping for 30 seconds then checking again")
+                            time.sleep(30)
+
+                            while (UTIL.isTorEstablished() == False):
+                                print("[i] Sleeping for 30 seconds then checking again")
+                                time.sleep(30)
+                                con_attempts += 1
+
+                                if (con_attempts >= 15):
+                                    print("[!] 15 Attempts to Re-Connected Failed. Exiting.")
+                                    exit(1)
+                            # Reset the index
+                            timeout_index = 0
+                        else:
+                            print("[i] We're still connected, continuing")
+                            timeout_index = 0
 
                 pbar.close()
 

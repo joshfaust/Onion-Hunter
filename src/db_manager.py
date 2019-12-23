@@ -1,6 +1,7 @@
 import base64
 import datetime
 import sqlite3
+from tqdm import tqdm
 
 from src import utilities
 
@@ -183,11 +184,14 @@ class db_manager:
         try:
             deleted_index = 0
 
-            # Get all of the hashes for the
+            # Get all of the hashes for all domains and read into a list
             cmd0 = "SELECT DOMAIN_HASH FROM ONIONS"
             self.cur.execute(cmd0)
             hash_list = self.cur.fetchall()
+            hash_list_length = len(hash_list)
 
+            # Delete all onions associated with Facebook, NYTimes
+            pbar = tqdm(total=hash_list_length)
             for hash in hash_list:
                 hash = str(hash).split("'")[1]
 
@@ -201,6 +205,15 @@ class db_manager:
                     self.conn.commit()
                     deleted_index += 1
 
+                pbar.update(1)
+
+            # Delete all onions where we received a timeout
+            cmd2 = f"DELETE FROM ONIONS WHERE SOURCE_TEXT = \"timeout\""
+            self.conn.execute(cmd2)
+            self.conn.commit()
+            self.conn.close()
+
+            # Database cleanup, optimization
             cmd3 = "vacuum"
             self.conn.execute(cmd3)
             self.conn.commit()
