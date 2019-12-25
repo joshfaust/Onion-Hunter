@@ -208,7 +208,7 @@ class db_manager:
                 pbar.update(1)
 
             # Delete all onions where we received a timeout
-            cmd2 = f"DELETE FROM ONIONS WHERE SOURCE_TEXT = \"timeout\""
+            cmd2 = f"DELETE FROM ONIONS WHERE INDEX_SOURCE = \"timeout\""
             self.conn.execute(cmd2)
             self.conn.commit()
             self.conn.close()

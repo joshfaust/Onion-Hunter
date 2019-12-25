@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="a2c4bfbc-977b-4ae5-982e-3cafd52e05c6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/db_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/db_manager.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,12 +26,6 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
-  </component>
-  <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-8" />
-    <option name="y" value="-8" />
-    <option name="width" value="1294" />
-    <option name="height" value="1400" />
   </component>
   <component name="ProjectId" id="1VP6hwaSDOLL6JLQu13LevLxXn0" />
   <component name="ProjectViewState">
@@ -74,6 +69,7 @@
       <workItem from="1575483418104" duration="30000" />
       <workItem from="1575483864155" duration="76000" />
       <workItem from="1577142508426" duration="447000" />
+      <workItem from="1577232163799" duration="734000" />
     </task>
     <servers />
   </component>
