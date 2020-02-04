@@ -30,9 +30,6 @@ For details about the Onion-Hunter Classes and API, please visit https://github.
 * *Packages:* See Requirements.txt
 * *Tor:* Must be able to route traffic via a Tor Proxy
 ** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails]
-=======
-** Windows: I like Nord VPN's Onion VPN or the https://github.com/basil00/TorWall[Open Source Tallow Project]
-** Linux: Whonix or a VPS solution with a TOR proxy.
 
 ---
 
