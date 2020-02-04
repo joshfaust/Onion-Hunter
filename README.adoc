@@ -6,7 +6,7 @@ Joshua.Faust@sevrosecurity.com
 image:https://img.shields.io/github/license/cribdragg3r/Onion-Hunter["GitHub license",link="https://github.com/cribdragg3r/Onion-Hunter/blob/master/LICENSE.md"]
 image:https://img.shields.io/github/issues/cribdragg3r/Onion-Hunter["GitHub issues",link="https://github.com/cribdragg3r/Onion-Hunter/issues"]
 image:docs/versions.svg["Python Versions"]
-image:https://www.codefactor.io/repository/github/cribdragg3r/onion-hunter/badge/master[]
+
 
 
 +++
@@ -30,7 +30,12 @@ For details about the Onion-Hunter Classes and API, please visit https://github.
 * *Python Version:* Python 3+
 * *Packages:* See Requirements.txt
 * *Tor:* Must be able to route traffic via a Tor Proxy
+<<<<<<< HEAD
 ** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails]
+=======
+** Windows: I like Nord VPN's Onion VPN or the https://github.com/basil00/TorWall[Open Source Tallow Project]
+** Linux: Whonix or a VPS solution with a TOR proxy.
+>>>>>>> 2522e7fdf1ffed5ceb849ef29d3442fcea7ba9f4
 
 ---
 
@@ -71,7 +76,7 @@ usage: Hunt.py [-h] [-s | -f  | -p | -c]
 optional arguments:
   -h, --help    show this help message and exit
   -s, --scan    Scan All The Things
-  -f , --file   Import Onions from txt file
+  -f, --file   Import Onions from txt file
   -p, --purge   Purge the whole database
   -c, --clean   Cleanup the DB
 ----
