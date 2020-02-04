@@ -8,7 +8,6 @@ image:https://img.shields.io/github/issues/cribdragg3r/Onion-Hunter["GitHub issu
 image:docs/versions.svg["Python Versions"]
 
 
-
 +++
 <a href ="https://sevrosecurity.com">
   <img src="docs/tor-icon.png"
@@ -30,12 +29,10 @@ For details about the Onion-Hunter Classes and API, please visit https://github.
 * *Python Version:* Python 3+
 * *Packages:* See Requirements.txt
 * *Tor:* Must be able to route traffic via a Tor Proxy
-<<<<<<< HEAD
 ** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails]
 =======
 ** Windows: I like Nord VPN's Onion VPN or the https://github.com/basil00/TorWall[Open Source Tallow Project]
 ** Linux: Whonix or a VPS solution with a TOR proxy.
->>>>>>> 2522e7fdf1ffed5ceb849ef29d3442fcea7ba9f4
 
 ---
 
