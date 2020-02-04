@@ -124,7 +124,7 @@ class db_manager:
     ## Returns: Boolean
     def checkOnionsDuplicate(self, n_hash):
         try:
-            cmd = "SELECT count(DOMAIN_HASH) FROM ONIONS WHERE DOMAIN_HASH = '?'"
+            cmd = "SELECT count(DOMAIN_HASH) FROM ONIONS WHERE DOMAIN_HASH =?"
             self.cur.execute(cmd, n_hash)
             data = self.cur.fetchone()
             data = str(data).split(",")[0].replace("(", "")
@@ -151,12 +151,12 @@ class db_manager:
             for n_hash in hash_list:
                 n_hash = str(n_hash).split("'")[1]
 
-                cmd1 = "SELECT URI FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH = '?'"
+                cmd1 = "SELECT URI FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH =?"
                 self.cur.execute(cmd1, n_hash)
                 uri = self.cur.fetchone()
 
                 # Pull the source code from the ONIONS table
-                cmd2 = f"SELECT INDEX_SOURCE FROM ONIONS WHERE DOMAIN_HASH = '?'"
+                cmd2 = f"SELECT INDEX_SOURCE FROM ONIONS WHERE DOMAIN_HASH =?"
                 self.cur.execute(cmd2, n_hash)
                 source = str(self.cur.fetchone()).split("'")[1].replace("\\n", "")
                 decoded_source = base64.decodebytes(source.encode("utf-8"))
@@ -164,7 +164,7 @@ class db_manager:
                 onion_addresses = UTIL.getOnions(str(decoded_source))
 
                 if (len(onion_addresses) < 50 or "facebook" in str(uri).lower() or "nytimes" in str(uri).lower()):
-                    cmd2 = f"DELETE FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH = '?'"
+                    cmd2 = f"DELETE FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH =?"
                     self.conn.execute(cmd2, n_hash)
                     self.conn.commit()
                     deleted_index += 1
@@ -195,12 +195,12 @@ class db_manager:
             for n_hash in hash_list:
                 n_hash = str(n_hash).split("'")[1]
 
-                cmd1 = f"SELECT URI FROM ONIONS WHERE DOMAIN_HASH = '?'"
+                cmd1 = f"SELECT URI FROM ONIONS WHERE DOMAIN_HASH =?"
                 self.cur.execute(cmd1, n_hash)
                 uri = self.cur.fetchone()
 
                 if ("facebook" in str(uri).lower() or "nytimes" in str(uri).lower()):
-                    cmd2 = f"DELETE FROM ONIONS WHERE DOMAIN_HASH = '?'"
+                    cmd2 = f"DELETE FROM ONIONS WHERE DOMAIN_HASH =?"
                     self.conn.execute(cmd2, n_hash)
                     self.conn.commit()
                     deleted_index += 1
