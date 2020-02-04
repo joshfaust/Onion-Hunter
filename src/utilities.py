@@ -3,7 +3,6 @@ import re
 import certifi
 import urllib3
 
-
 # ---------------------------------------|
 # Utilities Class                        |
 #                                        |
@@ -22,16 +21,25 @@ class util:
     ## Returns: String
     def getSHA256(self, data):
         try:
-            hash = hashlib.sha256(str(data).strip().encode()).hexdigest()
-            return hash
+            n_hash = hashlib.sha256(str(data).strip().encode()).hexdigest()
+            return n_hash
         except Exception as e:
             print(f"[!] ERROR: {e}")
-            pass
 
     # Pulls all of the oninos addresses resident on a single HTML page
     def getOnions(self, data):
-        find = re.findall(r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+.onion', data)
-        return find
+        addresses = re.findall(r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+.onion', data)
+        return addresses
+
+    # Get the MD5's in the deep psate site.
+    def deepPasteEnum(self, data):
+        md5_list = []
+        try:
+            md5_list = re.findall(r'md5=[0-9a-fA-F]{32}', data)
+            return md5_list
+        except Exception as e:
+            print(f"[!] Error: {e}")
+            return md5_list
 
     # Checks to see if a domain is a Fresh Onion
     def isFreshOnionRepo(self, source):
@@ -48,12 +56,10 @@ class util:
             # Determine if this site is a Fresh Onion site:
             if (count >= 50 and keyword_index > 2):
                 return True  # This is probably a Fresh Onion site
-            else:
-                return False  # Naa, this is just a regular onion address.
+            return False  # Naa, this is just a regular onion address.
 
         except Exception as e:
             print(f"[!] Error: {e}")
-            pass
 
     # Check if we are truly connected to TOR.
     def isTorEstablished(self):
@@ -66,8 +72,7 @@ class util:
             html = http.request("GET", url)
             if ("congratulations" in str(html.data).lower()):
                 return True
-            else:
-                return False
+            return False
 
         except Exception as e:
             return False

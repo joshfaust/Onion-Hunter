@@ -30,8 +30,7 @@ For details about the Onion-Hunter Classes and API, please visit https://github.
 * *Python Version:* Python 3+
 * *Packages:* See Requirements.txt
 * *Tor:* Must be able to route traffic via a Tor Proxy
-** Windows: I like Nord VPN's Onion VPN or the https://github.com/basil00/TorWall[Open Source Tallow Project]
-** Linux: TBD - Still Need to Test.
+** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails]
 
 ---
 
@@ -66,14 +65,15 @@ self.keywords = ["Example_keyword_1", "Example_keyword_2"]
 
 [source, text]
 ----
-λ python Hunt.py -h
-usage: Hunt.py [-h] [-s | -p | -c]
+python3 Hunt.py -h
+usage: Hunt.py [-h] [-s | -f  | -p | -c]
 
 optional arguments:
-  -h, --help   show this help message and exit
-  -s, --scan   Scan All The Things
-  -p, --purge  Purge the whole database
-  -c, --clean  Cleanup the DB
+  -h, --help    show this help message and exit
+  -s, --scan    Scan All The Things
+  -f , --file   Import Onions from txt file
+  -p, --purge   Purge the whole database
+  -c, --clean   Cleanup the DB
 ----
 
 ++++
