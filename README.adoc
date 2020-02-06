@@ -2,6 +2,7 @@
 Joshua.Faust@sevrosecurity.com
 :toc:
 :toclevels: 3
+:icons: font
 
 image:https://img.shields.io/github/license/cribdragg3r/Onion-Hunter["GitHub license",link="https://github.com/cribdragg3r/Onion-Hunter/blob/master/LICENSE.md"]
 image:https://img.shields.io/github/issues/cribdragg3r/Onion-Hunter["GitHub issues",link="https://github.com/cribdragg3r/Onion-Hunter/issues"]
