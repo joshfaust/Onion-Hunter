@@ -7,7 +7,7 @@ Joshua.Faust@sevrosecurity.com
 image:https://img.shields.io/github/license/cribdragg3r/Onion-Hunter["GitHub license",link="https://github.com/cribdragg3r/Onion-Hunter/blob/master/LICENSE.md"]
 image:https://img.shields.io/github/issues/cribdragg3r/Onion-Hunter["GitHub issues",link="https://github.com/cribdragg3r/Onion-Hunter/issues"]
 image:docs/versions.svg["Python Versions"]
-
+image:https://www.codefactor.io/repository/github/cribdragg3r/onion-hunter/badge/master[]
 
 +++
 <a href ="https://sevrosecurity.com">
