@@ -212,7 +212,7 @@ class db_manager:
             count = f"SELECT COUNT(ID) FROM ONIONS WHERE KEYWORD_MATCHES = \"timeout\""
             self.conn.execute(count)
             count_list = self.cur.fetchone()
-            if (count_list == None):
+            if (count_list is None):
                 count_list = 0
 
             cmd2 = f"DELETE from ONIONS where KEYWORD_MATCHES == \"timeout\""
@@ -255,7 +255,7 @@ class db_manager:
                 soup = BeautifulSoup(decoded_source, "html.parser")
                 try:
                     title = soup.find('title').text
-                except:
+                except Exception as e:
                     title = None
 
                 # Add it to the Onions table
@@ -268,6 +268,3 @@ class db_manager:
 
         except Exception as e:
             print(e)
-
-
-

@@ -27,20 +27,15 @@ from src import utilities
 # domains index source code.             |
 # ---------------------------------------|
 
-# GLOBAL VARIABLES
-REDDIT_AUTH_TOKEN = None
-
 # Class Objects
 DB = db_manager.db_manager()
 UTIL = utilities.util()
 CONFIG = config.configuration()
 
-
 # ===================================#
 # Reddit Login Function              #
 # ===================================#
 def reddit_login():
-    global REDDIT_AUTH_TOKEN
     try:
         r = praw.Reddit(username=CONFIG.r_username,
                         password=CONFIG.r_password,
@@ -50,7 +45,7 @@ def reddit_login():
 
         username = r.user.me()
 
-        if (username == None):
+        if (username is None):
             raise Exception("Failed to Login. Please Check Configuration Settings.")
 
         print(f"[i] Logged In As: {r.user.me()}")
@@ -150,7 +145,7 @@ def deepPaseSearch():
             
     except Exception as e:
         print(f"[!] Error: {e}")
-        pass
+
 
 
 # ===================================#
@@ -185,12 +180,12 @@ def checkConnection():
     try:
         con_attempts = 0
         # print("[!] We have had 20 Timeouts. Checking to see if we're still connected to TOR")
-        if (UTIL.isTorEstablished() == False):
+        if (UTIL.isTorEstablished() is False):
             print("[!] NOT Connected to TOR. Please Re-connect.")
             print("[i] Sleeping for 30 seconds then checking again")
             time.sleep(30)
 
-            while (UTIL.isTorEstablished() == False):
+            while (UTIL.isTorEstablished() is False):
                 print("[i] Sleeping for 30 seconds then checking again")
                 time.sleep(30)
                 con_attempts += 1
@@ -296,10 +291,12 @@ def getOnionSource(url):
                                    retries=2, timeout=to)
         html = http.request("GET", url)
         soup = BeautifulSoup(html.data, "html.parser")
+
         try:
             title = soup.find('title').text
-        except:
+        except Exception as e:
             title = None
+
         final = {"source": str(soup).lower(), "title": title}
         return final
     except urllib3.exceptions.ConnectTimeoutError as t:
@@ -337,7 +334,7 @@ if __name__ == "__main__":
                 time.sleep(1200)
                 print(f"[i] {datetime.datetime.now()}: Restarting Search.")
 
-    elif (args.file_data != None):
+    elif (args.file_data is not None):
         if (not UTIL.isTorEstablished()):
             print(f"[!] Not Connected to a TOR Proxy, exiting")
             exit(1)
