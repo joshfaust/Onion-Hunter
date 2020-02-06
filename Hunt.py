@@ -325,7 +325,7 @@ if __name__ == "__main__":
             exit(1)
         else:
             while True:
-                #redditScraper()                                # Search Reddit for onion addresses
+                redditScraper()                                # Search Reddit for onion addresses
                 deepPaseSearch()                                # Search DeepPaste for onions addresses
                 freshOnionsScraper()                            # Search known Fresh Onions Sources
                 importFromFile("docs/additional_onions.txt")    # Search any additional Onions found
