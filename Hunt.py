@@ -15,42 +15,10 @@ import src.reddit as reddit
 import src.onion_analysis as onion
 
 logname = f"tor_search_{date.today()}.log"
-logging.basicConfig(filename=logname, level=logging.INFO)
+logging.basicConfig(filename=logname, level=logging.INFO, datefmt='%Y-%m-%d %H:%M:%S')
 
 # Class Objects
 CONFIG = config.configuration()
-
-# ==================================#
-# Search TOR Deep Paste             #
-# ==================================#
-def deepPaseSearch():
-    md5_uri_list = []
-    deep_paste_keys = ['http://depastedihrn3jtw.onion/last.php',
-                       'http://depastedihrn3jtw.onion/top.php']
-
-    # Start to enumerate by getting the source then MD5's
-    try:
-        for domain in deep_paste_keys:
-            origin_address = domain.strip()
-            print(f"\n\t[+] Searching: {origin_address}")
-
-            data = getOnionSource(origin_address)
-            onions_source = data["source"]
-            md5_list = util.deepPasteEnum(onions_source)
-
-            #interate through list and append MD5's to full URI
-            for md5 in md5_list:
-                uri = f'http://depastedihrn3jtw.onion/show.php?{str(md5).strip()}'
-                md5_uri_list.append(uri)
-
-            # Append key URI to the list as well
-            md5_uri_list.append(origin_address)
-            analyzeOnionList(origin_address, md5_uri_list, len(md5_uri_list))
-            md5_uri_list.clear()
-            
-    except Exception as e:
-        print(f"[!] Error: {e}")
-
 
 
 # ==================================#
@@ -64,10 +32,15 @@ if __name__ == "__main__":
     me.add_argument("-f", "--file", metavar='', dest="file_data", help="Import Onions from txt file")
     me.add_argument("-p", "--purge", action="store_true", dest="purge", help="Purge the whole database")
     me.add_argument("-c", "--clean", action="store_true", dest="clean", help="Cleanup the DB")
+    parser.add_argument(
+    "--s3",
+    action="store_true",
+    required=False,
+    dest="aws_api",
+    default=False,
+    help="Upload compressed flight data to S3"
+    )
     args = parser.parse_args()
-
-    #getOnionSource("protonirockerxow.onion")
-    #exit(0)
 
     if (args.scan):
 
@@ -76,11 +49,19 @@ if __name__ == "__main__":
             exit(1)
         else:
             while True:
+                onion.deep_paste_search()
+                if (args.aws_api):
+                    util.write_to_s3("onion.db", "onion-hunter")
                 reddit.redditScraper()
-                #deepPaseSearch()                                # Search DeepPaste for onions addresses
+                if (args.aws_api):
+                    util.write_to_s3("onion.db", "onion-hunter")
                 onion.scrape_known_fresh_onions()
+                if (args.aws_api):
+                    util.write_to_s3("onion.db", "onion-hunter")
                 onion.analyze_onions_from_file("docs/additional_onions.txt")
                 os.remove("docs/additional_onions.txt")         # Delete the file after
+                if (args.aws_api):
+                    util.write_to_s3("onion.db", "onion-hunter")
                 util.chill()
 
     elif (args.file_data is not None):
@@ -95,6 +76,8 @@ if __name__ == "__main__":
                 onion.analyze_onions_from_file(args.file_data)
                 onion.analyze_onions_from_file("docs/additional_onions.txt")
                 os.remove("docs/additional_onions.txt")
+                if (args.aws_api):
+                    util.write_to_s3("onion.db", "onion-hunter")
             else:
                 print("[!] File Does Not Exist")
                 exit(0)

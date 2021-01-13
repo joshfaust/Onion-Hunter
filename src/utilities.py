@@ -3,8 +3,23 @@ import re
 import requests
 import time
 import datetime
+import logging
 
+from src import aws as aws
 from src import onion_analysis as onion
+
+
+def write_to_s3(filename: str, bucket_name: str) -> None:
+    """
+    Write a file to AWS S3
+    """
+    if not aws.check_bucket_exists(bucket_name):
+        if not aws.create_bucket(bucket_name):
+            logging.error(f"Unable to Create bucket")
+            exit(1)
+    if not aws.upload_to_s3(bucket_name, filename, filename):
+        logging.error(f"Unable to upload gzipped file to S3")
+
 
 def chill() -> None:
     """
@@ -25,10 +40,10 @@ def getSHA256(data):
         print(f"[!] ERROR: {e}")
 
 # Get the MD5's in the deep psate site.
-def deepPasteEnum(data):
+def deep_paste_enum(onion_source: str):
     md5_list = []
     try:
-        md5_list = re.findall(r'md5=[0-9a-fA-F]{32}', data)
+        md5_list = re.findall(r'md5=[0-9a-fA-F]{32}', onion_source)
         return md5_list
     except Exception as e:
         logging.error(f"MD5SUM_ERROR:{e}")

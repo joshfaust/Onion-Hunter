@@ -41,31 +41,27 @@ def redditScraper():
     and scrapes from onion addresses. 
     """
     r = reddit_login()
+    onion_addresses = []
+
+    subreddit_pbar = tqdm(total=len(CONFIG.sub_reddits), desc=f"Analyzing subreddits")
     for sub in CONFIG.sub_reddits:
-
         try:
+            onion_holder = []
             subreddit = r.subreddit(sub)
-            print(f"\n[+] Analyzing {subreddit.display_name} Subreddit.")
 
-            for submission in subreddit.hot(limit=75):
+            for submission in subreddit.hot(limit=20):
                 sub_content = submission.selftext
                 sub_link = submission.url
-                sub_links = onion.find_all_onion_addresses(sub_content)
+                onion_addresses = onion_addresses + onion.find_all_onion_addresses(sub_content)
                 domain_source = str(sub_link).strip()
 
                 # Check the top 15 comments in the Subreddit as well.
                 for comment in submission.comments.list()[:10]:
                     addresses = onion.find_all_onion_addresses(comment.body)
                     if (len(addresses) > 0):
-                        for i, item in enumerate(addresses) :
-                            sub_links.append(addresses[i])
-
-                # If there are onions found, continue
-                if len(sub_links) > 0:
-                    pbar = tqdm(total=len(sub_links), desc=f"Analyzing {len(sub_links)} Onion Domains")
-                    for domain in sub_links:
-                        onion.analyze_onion_address(domain_source, domain)
-                        pbar.update(1)
+                        for i, item in enumerate(addresses):
+                            onion_addresses.append(addresses[i])
+            subreddit_pbar.update(1)
 
         except praw.exceptions.ClientException as e:
             logging.error(f"Praw_ClientException:{e}")
@@ -79,3 +75,10 @@ def redditScraper():
         except AttributeError as e:
             logging.error(f"AttributeError:{e}")
             continue
+
+        # If there are onions found, continue
+    if len(onion_addresses) > 0:
+        pbar = tqdm(total=len(onion_addresses), desc=f"Analyzing {len(onion_addresses)} Onion Domains")
+        for domain in onion_addresses:
+            onion.analyze_onion_address(domain_source, domain)
+            pbar.update(1)

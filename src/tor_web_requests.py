@@ -1,5 +1,6 @@
 import requests
 import logging
+import time
 
 from bs4 import BeautifulSoup
 
@@ -17,7 +18,7 @@ def get_tor_site_source(uri: str) -> dict:
         # using Polipo port for the socks proxt to TOR
         proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
         headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
-        r = requests.get(uri, headers=headers, proxies=proxy, timeout=7)
+        r = requests.get(uri, headers=headers, proxies=proxy, timeout=5)
         soup = BeautifulSoup(r.text, "html.parser")
 
         try:
