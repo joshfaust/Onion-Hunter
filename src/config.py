@@ -27,6 +27,9 @@ class configuration:
                             "emailprivacy", "drugs", "blackhat", "HowToHack", "netsec", "hacking",
                             "blackhatunderground", "blackhats", "blackhatting", "blackhatexploits",
                             "reverseengineering"]
+        
+        self.aws_access_key = ""
+        self.aws_secret_key = ""
 
         # Keywords to Search each Onions Address for.
         ## Searches the .onion source code retrived via an HTTP GET request.
