@@ -6,18 +6,18 @@ from bs4 import BeautifulSoup
 
 def get_tor_site_source(uri: str) -> dict:
     """
-    Extract the index.html source from the web page.
+    Extract HTML source from a uri
     """
     timeout = {"source": "timeout", "title": "timeout"}
     try:
 
-        if "http" not in url:
-            url = f"http://{url}"
+        if "http" not in uri:
+            uri = f"http://{uri}"
 
         # using Polipo port for the socks proxt to TOR
         proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
         headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
-        r = requests.get(url, headers=headers, proxies=proxy, timeout=10)
+        r = requests.get(uri, headers=headers, proxies=proxy, timeout=7)
         soup = BeautifulSoup(r.text, "html.parser")
 
         try:
@@ -25,8 +25,7 @@ def get_tor_site_source(uri: str) -> dict:
         except Exception as e:
             title = None
 
-        final = {"source": str(soup).lower(), "title": title}
-        return final
+        return {"source": str(soup).lower(), "title": title}
 
     except requests.exceptions.ConnectionError as e:
         logging.error(f"Tor Web Request ConnectionError:{e}")
@@ -38,23 +37,47 @@ def get_tor_site_source(uri: str) -> dict:
         logging.error(f"Tor Web Request HTTPError:{e}")
         return timeout
     except Exception as e:
-        logging.error(f"Tor Web Request ERROR:{e}")
+        logging.error(f"Tor Web Request ERROR:{e}:URI={uri}")
         return timeout     
 
 
-    def is_tor_established() -> bool:
-        """
-        Determine if we are connected to tor
-        """
-        try:
-            proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
-            url = "https://check.torproject.org/"
-            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
-            r = requests.get(url, proxies=proxy, headers=headers)
-            html = r.text
-            if ("congratulations" in html.lower()):
-                return True
-            return False
+def is_tor_established() -> bool:
+    """
+    Determine if we are connected to tor
+    """
+    try:
+        proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
+        url = "https://check.torproject.org/"
+        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
+        r = requests.get(url, proxies=proxy, headers=headers, timeout=7)
+        html = r.text
+        if ("congratulations" in html.lower()):
+            return True
+        return False
 
-        except Exception as e:
-            return False
+    except Exception as e:
+        return False
+
+
+def check_tor_connection() -> None:
+    """
+    Check if we have a connection to TOR and if not, wait 30 seconds
+    on 15 interations until we exit if there is no connection.
+    """
+    try:
+        con_attempts = 0
+
+        while not is_tor_established():
+            logging.error(f"Not connected to TOR, sleeping for 30 seconds")
+            print("[!] NOT Connected to TOR. Please Re-connect.")
+            time.sleep(30)
+            con_attempts += 1
+
+            if (con_attempts >= 15):
+                print("[!] 15 Attempts to Re-Connected Failed. Exiting.")
+                exit(0)
+
+    except Exception as e:
+        logging.error(f"While checking the TOR connection, an error occured:{e}")
+        print(f"[!] Check Connection ERROR: {e}")
+        exit(1)

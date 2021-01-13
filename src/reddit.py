@@ -1,5 +1,10 @@
 import praw
 import logging
+from tqdm import tqdm
+
+from src import utilities as util
+from src import onion_analysis as onion 
+from src import config
 
 CONFIG = config.configuration()
 
@@ -24,13 +29,10 @@ def reddit_login() -> praw.Reddit:
 
     except praw.exceptions.ClientException as e:
         logging.error(f"Praw_ClientException:{e}")
-        continue
     except praw.exceptions.PRAWException as e:
         logging.error(f"PrawException:{e}")
-        continue
     except praw.exceptions.APIException as e:
         logging.error(f"Praw_APIException:{e}")
-        continue
 
 
 def redditScraper():
@@ -48,19 +50,22 @@ def redditScraper():
             for submission in subreddit.hot(limit=75):
                 sub_content = submission.selftext
                 sub_link = submission.url
-                sub_links = UTIL.getOnions(sub_content)
+                sub_links = onion.find_all_onion_addresses(sub_content)
                 domain_source = str(sub_link).strip()
 
                 # Check the top 15 comments in the Subreddit as well.
                 for comment in submission.comments.list()[:10]:
-                    addresses = UTIL.getOnions(comment.body)
+                    addresses = onion.find_all_onion_addresses(comment.body)
                     if (len(addresses) > 0):
                         for i, item in enumerate(addresses) :
                             sub_links.append(addresses[i])
 
                 # If there are onions found, continue
-                if (len(sub_links) > 0):
-                    analyzeOnionList(domain_source, sub_links, len(sub_links))
+                if len(sub_links) > 0:
+                    pbar = tqdm(total=len(sub_links), desc=f"Analyzing {len(sub_links)} Onion Domains")
+                    for domain in sub_links:
+                        onion.analyze_onion_address(domain_source, domain)
+                        pbar.update(1)
 
         except praw.exceptions.ClientException as e:
             logging.error(f"Praw_ClientException:{e}")
@@ -70,4 +75,7 @@ def redditScraper():
             continue
         except praw.exceptions.APIException as e:
             logging.error(f"Praw_APIException:{e}")
+            continue
+        except AttributeError as e:
+            logging.error(f"AttributeError:{e}")
             continue
