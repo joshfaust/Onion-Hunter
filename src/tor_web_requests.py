@@ -16,13 +16,13 @@ def get_tor_site_source(uri: str) -> dict:
             uri = f"http://{uri}"
 
         # using Polipo port for the socks proxt to TOR
-        proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
-        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
-        r = requests.get(uri, headers=headers, proxies=proxy, timeout=5)
+        proxy = {"http": "socks5@127.0.0.1:8123", "https": "socks5@127.0.0.1:8123"}
+        headers = {"user-agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"}
+        r = requests.get(uri, headers=headers, proxies=proxy, timeout=6)
         soup = BeautifulSoup(r.text, "html.parser")
 
         try:
-            title = soup.find('title').text
+            title = soup.find("title").text
         except Exception as e:
             title = None
 
@@ -39,7 +39,7 @@ def get_tor_site_source(uri: str) -> dict:
         return timeout
     except Exception as e:
         logging.error(f"Tor Web Request ERROR:{e}:URI={uri}")
-        return timeout     
+        return timeout
 
 
 def is_tor_established() -> bool:
@@ -47,12 +47,14 @@ def is_tor_established() -> bool:
     Determine if we are connected to tor
     """
     try:
-        proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
+        proxy = {"http": "socks5@127.0.0.1:8123", "https": "socks5@127.0.0.1:8123"}
         url = "https://check.torproject.org/"
-        headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
+        headers = {
+            "user-agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"
+        }
         r = requests.get(url, proxies=proxy, headers=headers, timeout=7)
         html = r.text
-        if ("congratulations" in html.lower()):
+        if "congratulations" in html.lower():
             return True
         return False
 
@@ -74,9 +76,10 @@ def check_tor_connection() -> None:
             time.sleep(30)
             con_attempts += 1
 
-            if (con_attempts >= 15):
+            if con_attempts >= 15:
                 print("[!] 15 Attempts to Re-Connected Failed. Exiting.")
                 exit(0)
+        print("\n[i] TOR Connection Confirmed")
 
     except Exception as e:
         logging.error(f"While checking the TOR connection, an error occured:{e}")

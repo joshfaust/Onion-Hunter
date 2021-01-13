@@ -58,17 +58,18 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
     the data in the sqlite DB. 
     """
     try:
-        matches = set()             # Array to keep matched words.
+        matches = []             # Array to keep matched words.
         found_addresses = []        # placeholder for newly found onion addresses.
         domain_hash = util.getSHA256(domain)
 
         # Verify it's not a duplicate
         if (not DB.is_duplicate_onion(domain_hash) and not is_unworthy_domain(domain)):
+
             tor_dict = get_tor_site_source(domain)
             tor_source = tor_dict["source"]
             title = tor_dict["title"]
 
-            # If we didn't get a timeout, continue to analyze
+            # check if it's a HTTP Failure
             if (tor_source != "timeout" and not is_failed_http_request(title)):
 
                 # If the onion address meets the "Fresh Onions" criteria, add to table
@@ -79,13 +80,13 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
                 matches = get_onion_source_keywords(tor_source)
                 DB.onionsInsert(origin_address, domain, title, domain_hash,
                                 str(matches), str(len(matches)), tor_source)
+                DB.seen_onions_insert(domain, util.getSHA256(domain))
 
                 # add any new onions found
                 found_addresses = find_all_onion_addresses(tor_source)
 
-            # Check timout counter:
-            if (tor_source == "timeout"):
-                check_tor_connection()
+            else:
+                DB.seen_onions_insert(domain, util.getSHA256(domain))
 
         # Save the additional Onions to a file for later analysis
         with open("docs/additional_onions.txt", "a") as f:
@@ -104,28 +105,31 @@ def analyze_onions_from_file(file_path: str) -> None:
     Given a txt file where each new line contains a different
     .onion address, analyze that onion. 
     """
-    onion_addresses = open(file_path, "r").readlines()
-    pbar = tqdm(total=len(onion_addresses), desc=f"Analyzing Onion Addressed from {file_path}")
-    for domain in onion_addresses:
-        try:
+    try:
+        onion_addresses = open(file_path, "r").readlines()
+        pbar = tqdm(total=len(onion_addresses), desc=f"Analyzing Onion Addresses from {file_path}")
+
+        for domain in onion_addresses:
             origin_address = clean_onion_address(domain)
             if not origin_address == "":
                 analyze_onion_address("file_import", origin_address)
             pbar.update(1)
-
-        except Exception as e:
-            print(f"[!] Import From File ERROR: {e}")
-            exit(1)
+            
+        pbar.close()
+        
+    except Exception as e:
+        print(f"[!] Import From File ERROR: {e}")
+        exit(1)
 
 
 def get_onion_source_keywords(source_code: str) -> set:
     """
     find all the keywords that match the source html code. 
     """
-    matches = set()
+    matches = []
     for word in CONFIG.keywords:
         if word in source_code:
-            matches.add(word)
+            matches.append(word)
 
     return matches
 
@@ -135,13 +139,11 @@ def scrape_known_fresh_onions() -> None:
     with the .onion address we have denoted as Fresh in the SQLITE3 DB,
     go an analyze each of the sites for new domains. 
     """
-    print(f"[i] Starting Fresh Onion Searches")
     domains = DB.getFreshOnionDomains()
 
     # Iterate through the known Fresh Onions domains/lists
-    for origin_address in domains:
+    for i, origin_address in enumerate(domains):
         origin_address = str(origin_address).replace("('", "").replace("',)", "").strip()
-        print(f"\n\t[+] Searching: {origin_address}")
         try:
 
             data = get_tor_site_source(origin_address)
@@ -149,8 +151,11 @@ def scrape_known_fresh_onions() -> None:
             new_domains = find_all_onion_addresses(fresh_onions_source)
 
             # If there are onion addresses found, continue:
+            pbar = tqdm(total=len(new_domains), desc=f"Searching Fresh Onion Domain #{i}")
             for domain in new_domains:
                 analyze_onion_address(origin_address, domain)
+                pbar.update(1)
+            pbar.close()
 
         except Exception as e:
             logging.error(f"scrape_known_fresh_onions ERROR:{e}")
@@ -164,9 +169,8 @@ def deep_paste_search() -> None:
 
     # Start to enumerate by getting the source then MD5's
     try:
-        for domain in deep_paste_keys:
+        for i, domain in enumerate(deep_paste_keys):
             origin_address = domain.strip()
-            print(f"[+] Searching: {origin_address}")
 
             data = get_tor_site_source(origin_address)
             onion_source = data["source"]
@@ -178,8 +182,11 @@ def deep_paste_search() -> None:
                 md5_uri_list.append(uri)
 
             # Append key URI to the list as well
+            pbar = tqdm(total=len(md5_uri_list), desc=f"Analyzing deep paste domain #{i}")
             for domain in md5_uri_list:
                 analyze_onion_address(origin_address, domain)
+                pbar.update(1)
+            pbar.close()
             
     except Exception as e:
         print(f"[!] Error: {e}")
