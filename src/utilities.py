@@ -2,6 +2,7 @@ import hashlib
 import re
 import certifi
 import urllib3
+import requests
 
 # ---------------------------------------|
 # Utilities Class                        |
@@ -28,7 +29,7 @@ class util:
 
     # Pulls all of the oninos addresses resident on a single HTML page
     def getOnions(self, data):
-        addresses = re.findall(r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+.onion', data)
+        addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion(?:\S+|)', data)
         return addresses
 
     # Get the MD5's in the deep psate site.
@@ -64,13 +65,12 @@ class util:
     # Check if we are truly connected to TOR.
     def isTorEstablished(self):
         try:
+            proxy = {"http":"socks5@127.0.0.1:8123","https":"socks5@127.0.0.1:8123"}
             url = "https://check.torproject.org/"
-            user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
-            to = urllib3.Timeout(connect=7, read=2)
-            http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where(), headers=user_agent,
-                                       retries=2, timeout=to)
-            html = http.request("GET", url)
-            if ("congratulations" in str(html.data).lower()):
+            headers = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
+            r = requests.get(url, proxies=proxy, headers=headers)
+            html = r.text
+            if ("congratulations" in html.lower()):
                 return True
             return False
 

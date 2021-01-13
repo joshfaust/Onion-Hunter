@@ -122,7 +122,7 @@ class db_manager:
 
     # Checks if a Domain alread exists within the ONIONS table
     ## Returns: Boolean
-    def checkOnionsDuplicate(self, n_hash):
+    def is_duplicate_onion(self, n_hash: str) -> bool:
         try:
             cmd = "SELECT count(DOMAIN_HASH) FROM ONIONS WHERE DOMAIN_HASH =?"
             self.cur.execute(cmd, (n_hash,))
