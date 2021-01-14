@@ -1,6 +1,7 @@
 import base64
 import datetime
 import sqlite3
+import logging
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 

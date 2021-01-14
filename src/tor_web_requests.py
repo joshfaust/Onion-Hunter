@@ -22,9 +22,9 @@ def get_tor_site_source(uri: str) -> dict:
         headers = {"user-agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"}
 
         if conf.use_proxy:
-            r = requests.get(uri, headers=headers, proxies=proxy, timeout=6)
+            r = requests.get(uri, headers=headers, proxies=proxy, timeout=10)
         else:
-            r = requests.get(uri, headers=headers, timeout=6)
+            r = requests.get(uri, headers=headers, timeout=10)
 
         soup = BeautifulSoup(r.text, "html.parser")
 
@@ -62,9 +62,9 @@ def is_tor_established() -> bool:
         }
 
         if conf.use_proxy:
-            r = requests.get(uri, headers=headers, proxies=proxy, timeout=6)
+            r = requests.get(uri, headers=headers, proxies=proxy, timeout=10)
         else:
-            r = requests.get(uri, headers=headers, timeout=6)
+            r = requests.get(uri, headers=headers, timeout=10)
 
         html = r.text
         if "congratulations" in html.lower():

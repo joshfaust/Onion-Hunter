@@ -7,6 +7,7 @@ import logging
 
 from tqdm import tqdm
 from datetime import date
+from src import aws as aws
 from src.tor_web_requests import is_tor_established, check_tor_connection
 from src import config
 from src import db_manager as db
@@ -33,6 +34,13 @@ if __name__ == "__main__":
         help="Scan All The Things"
     )
     me.add_argument(
+        "-u",
+        "--uri",
+        dest="uri",
+        metavar='',
+        help="Analyze an Individual Onion Domain"
+    )
+    me.add_argument(
         "-f", 
         "--file", 
         metavar="",
@@ -44,7 +52,7 @@ if __name__ == "__main__":
         "--purge",
         action="store_true",
         dest="purge",
-        help="Purge the whole database",
+        help="Purge the whole database"
     )
     me.add_argument(
         "-n",
@@ -60,7 +68,7 @@ if __name__ == "__main__":
         required=False,
         dest="aws_api",
         default=False,
-        help="Upload compressed flight data to S3",
+        help="Upload compressed flight data to S3"
     )
 
     args = parser.parse_args()
@@ -72,6 +80,11 @@ if __name__ == "__main__":
     if args.scan or args.file_data:
         if not is_tor_established():
             print(f"[!] Not Connected to a TOR Proxy, exiting")
+            exit(1)
+
+    if args.aws_api:
+        if not aws.aws_api_keys_exist():
+            print("[!] If you're going to use --s3, add your S3 credentials.")
             exit(1)
 
     if args.scan:
@@ -93,6 +106,12 @@ if __name__ == "__main__":
                 util.write_to_s3("onion.db", "onion-hunter")
             util.chill()
 
+    elif args.uri is not None:
+        print(f"[i] Analyzing {args.uri}")
+        result = onion.analyze_onion_address("manual", args.uri)
+        print(f"[i] {result}")
+        exit(0)
+
     elif args.file_data is not None:
 
         # check if file exists:
@@ -103,8 +122,8 @@ if __name__ == "__main__":
             if args.aws_api:
                 util.write_to_s3("onion.db", "onion-hunter")
         else:
-            print("[!] File Does Not Exist")
-            exit(0)
+            print(f"[!] File Does Not Exist: {args.file_data}")
+            exit(1)
 
     elif args.purge:
         DB = db_manager.db_manager()

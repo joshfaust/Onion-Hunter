@@ -60,9 +60,11 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
         matches = []             # Array to keep matched words.
         found_addresses = []        # placeholder for newly found onion addresses.
         domain_hash = util.getSHA256(domain)
+        domain_status = None
 
         # Verify it's not a duplicate
         if (not DB.is_duplicate_onion(domain_hash) and not is_unworthy_domain(domain)):
+            
 
             tor_dict = get_tor_site_source(origin_address)
             tor_source = tor_dict["source"]
@@ -83,9 +85,13 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
 
                 # add any new onions found
                 found_addresses = find_all_onion_addresses(tor_source)
+                domain_status = "Domain has been Analyzed. ONIONS table contains results"
 
             else:
                 DB.seen_onions_insert(domain, util.getSHA256(domain))
+                domain_status = "Domain Timed Out. Doesn't look to be up."
+        else:
+            domain_status = "This is a Duplicate Domain, We've Already Analyzed this"
 
         # Save the additional Onions to a file for later analysis
         with open("docs/additional_onions.txt", "a") as f:
@@ -93,6 +99,7 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
                 f.write(address + "\n")
         f.close()
 
+        return domain_status
     except Exception as e:
         exec_type, exec_obj, tb = sys.exc_info()
         logging.error(f"analyze_onion_address() ERROR:{e}:linenum:{tb.tb_lineno}")

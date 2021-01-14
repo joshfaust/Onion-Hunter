@@ -18,7 +18,7 @@ def aws_api_keys_exist() -> bool:
     Make sure that the API keys have been entered into secrets.conf
     """
     sk, ak = _get_api_keys()
-    if (sk != "None") and (ak != "None"):
+    if (sk != "") and (ak != ""):
         return True
     return False
 
