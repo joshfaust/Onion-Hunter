@@ -15,6 +15,10 @@
 class configuration:
 
     def __init__(self):
+        
+        # Network Setup
+        self.use_proxy = False
+        
         # Reddit API Variables
         self.r_username = ""
         self.r_password = ""
