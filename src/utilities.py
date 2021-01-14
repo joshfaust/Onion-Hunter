@@ -2,6 +2,7 @@ import hashlib
 import re
 import os
 import requests
+import gzip
 import time
 import datetime
 import logging
@@ -9,6 +10,19 @@ import logging
 from src import aws as aws
 from src import onion_analysis as onion
 
+
+def gzip_file(filepath: str, output_filename: str) -> bool:
+    """ 
+    Gzip any file
+    """
+    try:
+        with open(filepath, "rb") as f_in:
+            with gzip.open(output_filename, "wb") as f_out:
+                f_out.writelines(f_in)
+        return True
+    except Exception as e:
+        logging.error(f"gzip ERROR:{e}")
+        return False
 
 def write_to_s3(filename: str, bucket_name: str) -> None:
     """

@@ -21,17 +21,23 @@ logging.basicConfig(filename=logname, level=logging.INFO, datefmt="%Y-%m-%d %H:%
 
 #GLOBAL
 PREVIOUS_DB_HASH = ""
+DB_NAME = "onion.db"
 
 def check_db(using_aws: bool):
     """
     Check if the DB has changed and if so, upload to 
     """
-    global PREVIOUS_DB_HASH
-    current_hash = util.get_file_md5_hash("onion.db")
-    if using_aws and util.has_database_changed(previous_db_hash, current_hash):
-        util.write_to_s3("onion.db", "onion-hunter")
-        PREVIOUS_DB_HASH = current_hash
-        logging.info(f"DB Change Detected, uploaded to S3:prev_hash={PREVIOUS_DB_HASH}:cur_hash={current_hash}")
+    global PREVIOUS_DB_HASH, DB_NAME
+    current_hash = util.get_file_md5_hash(DB_NAME)
+
+    if using_aws and util.has_database_changed(PREVIOUS_DB_HASH, current_hash):
+
+        if (util.gzip_file(DB_NAME, "onion.db.gz")):
+
+            util.write_to_s3(f"{DB_NAME}.gz", "onion-hunter")
+            os.remove(f"{DB_NAME}.gz")
+            logging.info(f"DB Change Detected, uploaded to S3:prev_hash={PREVIOUS_DB_HASH}:cur_hash={current_hash}")
+            PREVIOUS_DB_HASH = current_hash
     else:
         logging.info("No Change in DB. Continuing")
 
