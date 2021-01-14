@@ -19,6 +19,22 @@ import src.onion_analysis as onion
 logname = f"tor_search_{date.today()}.log"
 logging.basicConfig(filename=logname, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
 
+#GLOBAL
+PREVIOUS_DB_HASH = ""
+
+def check_db(using_aws: bool):
+    """
+    Check if the DB has changed and if so, upload to 
+    """
+    global PREVIOUS_DB_HASH
+    current_hash = util.get_file_md5_hash("onion.db")
+    if using_aws and util.has_database_changed(previous_db_hash, current_hash):
+        util.write_to_s3("onion.db", "onion-hunter")
+        PREVIOUS_DB_HASH = current_hash
+        logging.info(f"DB Change Detected, uploaded to S3:prev_hash={PREVIOUS_DB_HASH}:cur_hash={current_hash}")
+    else:
+        logging.info("No Change in DB. Continuing")
+
 # ==================================#
 # MAIN                              #
 # ==================================#
@@ -88,22 +104,19 @@ if __name__ == "__main__":
             exit(1)
 
     if args.scan:
+        previous_db_hash = ""
 
         while True:
             check_tor_connection()
             onion.deep_paste_search()
-            if args.aws_api:
-                util.write_to_s3("onion.db", "onion-hunter")
+            check_db(args.aws_api)
             reddit.redditScraper()
-            if args.aws_api:
-                util.write_to_s3("onion.db", "onion-hunter")
+            check_db(args.aws_api)
             onion.scrape_known_fresh_onions()
-            if args.aws_api:
-                util.write_to_s3("onion.db", "onion-hunter")
+            check_db(args.aws_api)
             onion.analyze_onions_from_file("docs/additional_onions.txt")
             os.remove("docs/additional_onions.txt")  # Delete the file after
-            if args.aws_api:
-                util.write_to_s3("onion.db", "onion-hunter")
+            check_db(args.aws_api)
             util.chill()
 
     elif args.uri is not None:
@@ -119,8 +132,7 @@ if __name__ == "__main__":
             onion.analyze_onions_from_file(args.file_data)
             onion.analyze_onions_from_file("docs/additional_onions.txt")
             os.remove("docs/additional_onions.txt")
-            if args.aws_api:
-                util.write_to_s3("onion.db", "onion-hunter")
+            check_db(args.aws_api)
         else:
             print(f"[!] File Does Not Exist: {args.file_data}")
             exit(1)

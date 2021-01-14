@@ -1,5 +1,6 @@
 import hashlib
 import re
+import os
 import requests
 import time
 import datetime
@@ -30,6 +31,14 @@ def chill() -> None:
     print(f"[i] {datetime.datetime.now()}: Restarting Search.")
 
 
+def has_database_changed(previous_hash: str, current_hash: str) -> bool:
+    """
+    comapre DB hashes and determine if we need to upload to S3
+    """
+    if previous_hash != current_hash:
+        return True
+    return False
+
 # Gets the SHA256 hash for a string
 ## Returns: String
 def getSHA256(data):
@@ -39,6 +48,22 @@ def getSHA256(data):
     except Exception as e:
         logging.error(f"Utilities_SHA256_ERROR:{e}")
         print(f"[!] ERROR: {e}")
+
+
+def get_file_md5_hash(filename: str):
+    """
+    Get an MD5 hash of a file
+    """
+    if not os.path.exists(filename):
+        logging.error(f"get_file_md5_hash() File Does Not Exist: {filename}")
+    else:
+        with open(filename, "rb") as f:
+            file_hash = hashlib.md5()
+            chunk = f.read(8192)
+            while chunk:
+                file_hash.update(chunk)
+                chunk = f.read(8192)
+        return file_hash.hexdigest()
 
 
 # Get the MD5's in the deep psate site.

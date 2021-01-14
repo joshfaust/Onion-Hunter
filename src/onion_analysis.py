@@ -38,7 +38,7 @@ def is_unworthy_domain(domain_name: str) -> bool:
     Check if domain is a known, not interesting domain
     """
     bad_domains = ["facebook", "facebo", "nytimes", "nytime", "twitter.com"]
-    return domain_name in bad_domains
+    return bool([f for f in bad_domains if (f in str(domain_name))])
 
 
 def is_failed_http_request(site_title: str) -> bool:
@@ -66,7 +66,7 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
         if (not DB.is_duplicate_onion(domain_hash) and not is_unworthy_domain(domain)):
             
 
-            tor_dict = get_tor_site_source(origin_address)
+            tor_dict = get_tor_site_source(domain)
             tor_source = tor_dict["source"]
             title = tor_dict["title"]
 
