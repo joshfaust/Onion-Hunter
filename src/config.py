@@ -15,6 +15,10 @@
 class configuration:
 
     def __init__(self):
+        
+        # Network Setup
+        self.use_proxy = False
+        
         # Reddit API Variables
         self.r_username = ""
         self.r_password = ""
@@ -27,6 +31,9 @@ class configuration:
                             "emailprivacy", "drugs", "blackhat", "HowToHack", "netsec", "hacking",
                             "blackhatunderground", "blackhats", "blackhatting", "blackhatexploits",
                             "reverseengineering"]
+        
+        self.aws_access_key = ""
+        self.aws_secret_key = ""
 
         # Keywords to Search each Onions Address for.
         ## Searches the .onion source code retrived via an HTTP GET request.
