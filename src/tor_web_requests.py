@@ -3,12 +3,14 @@ import logging
 import time
 
 from bs4 import BeautifulSoup
-
+from src import config
+conf = config.configuration()
 
 def get_tor_site_source(uri: str) -> dict:
     """
     Extract HTML source from a uri
     """
+
     timeout = {"source": "timeout", "title": "timeout"}
     try:
 
@@ -18,7 +20,12 @@ def get_tor_site_source(uri: str) -> dict:
         # using Polipo port for the socks proxt to TOR
         proxy = {"http": "socks5@127.0.0.1:8123", "https": "socks5@127.0.0.1:8123"}
         headers = {"user-agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"}
-        r = requests.get(uri, headers=headers, proxies=proxy, timeout=6)
+
+        if conf.use_proxy:
+            r = requests.get(uri, headers=headers, proxies=proxy, timeout=6)
+        else:
+            r = requests.get(uri, headers=headers, timeout=6)
+
         soup = BeautifulSoup(r.text, "html.parser")
 
         try:
@@ -47,18 +54,25 @@ def is_tor_established() -> bool:
     Determine if we are connected to tor
     """
     try:
+
         proxy = {"http": "socks5@127.0.0.1:8123", "https": "socks5@127.0.0.1:8123"}
-        url = "https://check.torproject.org/"
+        uri = "https://check.torproject.org/"
         headers = {
             "user-agent": "Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0"
         }
-        r = requests.get(url, proxies=proxy, headers=headers, timeout=7)
+
+        if conf.use_proxy:
+            r = requests.get(uri, headers=headers, proxies=proxy, timeout=6)
+        else:
+            r = requests.get(uri, headers=headers, timeout=6)
+
         html = r.text
         if "congratulations" in html.lower():
             return True
         return False
 
     except Exception as e:
+        logging.error(f"is_tor_established() ERROR:{e}")
         return False
 
 

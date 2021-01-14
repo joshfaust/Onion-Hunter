@@ -1,4 +1,4 @@
-= Onion-Hunter
+= Onion-Hunter 2.0
 Joshua.Faust@sevrosecurity.com
 :toc:
 :toclevels: 3
@@ -12,11 +12,11 @@ image:https://www.codefactor.io/repository/github/cribdragg3r/onion-hunter/badge
 +++
 <a href ="https://sevrosecurity.com">
   <img src="docs/tor-icon.png"
-    title="Simple-Loader" align="left" height=100 length=100 />
+    title="Onion Hunter" align="left" height=100 length=100 />
     </a>
 +++
 
-### About
+== About
 This package is designed to help anyone hunt for Onion addresses subject to a set of keywords set by the user. The primary
 design characteristic is to enable the user to define attributes/keywords that they would like to hunt on. All customizable
 attributes are located within the `src/config.py` python file. This is the only object that should be edited by the user.
@@ -25,16 +25,16 @@ For details about the Onion-Hunter Classes and API, please visit https://github.
 
 
 ---
-### Requirements
+== Requirements
 
 * *Python Version:* Python 3+
 * *Packages:* See Requirements.txt
 * *Tor:* Must be able to route traffic via a Tor Proxy
-** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails]
+** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails] Or see my AWS EC2 Setup
 
 ---
 
-### Usage
+== Usage
 
 Before running `Hunt.py` for the first time, please follow these steps:
 
@@ -61,7 +61,7 @@ self.r_user_agent = ""
 self.keywords = ["Example_keyword_1", "Example_keyword_2"]
 ----
 
-#### Examples
+== Examples
 
 [source, text]
 ----
@@ -88,14 +88,8 @@ Figure 2. Purging the Database
 ++++
 
 ---
-### Continuing Work
 
-1. Add a reporting class to help cleaning digest the SQL database into a CSV or Excel document.
-** Possibly use Pandas for report generation.
-
----
-
-### Contact
+== Contact
 
 ++++
 <a href ="https://twitter.com/JFaust0">

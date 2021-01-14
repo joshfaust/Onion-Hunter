@@ -6,9 +6,9 @@ import requests
 import logging
 
 from tqdm import tqdm
-from src import config
 from datetime import date
 from src.tor_web_requests import is_tor_established, check_tor_connection
+from src import config
 
 import src.utilities as util
 import src.reddit as reddit
@@ -16,10 +16,6 @@ import src.onion_analysis as onion
 
 logname = f"tor_search_{date.today()}.log"
 logging.basicConfig(filename=logname, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
-
-# Class Objects
-CONFIG = config.configuration()
-
 
 # ==================================#
 # MAIN                              #
@@ -49,13 +45,6 @@ if __name__ == "__main__":
         dest="purge",
         help="Purge the whole database",
     )
-    me.add_argument(
-        "-c", 
-        "--clean", 
-        action="store_true", 
-        dest="clean", 
-        help="Cleanup the DB"
-    )
     parser.add_argument(
         "--s3",
         action="store_true",
@@ -64,6 +53,7 @@ if __name__ == "__main__":
         default=False,
         help="Upload compressed flight data to S3",
     )
+
     args = parser.parse_args()
 
     if args.scan or args.file_data:
@@ -114,7 +104,3 @@ if __name__ == "__main__":
             print("[i] Exiting.")
             exit(0)
 
-    elif args.clean:
-        DB = db_manager.db_manager()
-        DB.cleanupFreshOnions()
-        DB.cleanupOnions()

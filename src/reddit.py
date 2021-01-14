@@ -37,7 +37,7 @@ def reddit_login() -> praw.Reddit:
         logging.error(f"Praw_APIException:{e}")
 
 
-def redditScraper():
+def redditScraper() -> None:
     """
     Enumerates each subreddit defined in the config
     and scrapes from onion addresses.

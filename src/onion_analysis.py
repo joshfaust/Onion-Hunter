@@ -7,10 +7,9 @@ from src import db_manager as DB
 from src import config
 
 from tqdm import tqdm
-from src.tor_web_requests import get_tor_site_source, is_tor_established, check_tor_connection
+from src.tor_web_requests import get_tor_site_source
 
 CONFIG = config.configuration()
-
 
 def find_all_onion_addresses(source: str) -> list:
     """
@@ -65,7 +64,7 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
         # Verify it's not a duplicate
         if (not DB.is_duplicate_onion(domain_hash) and not is_unworthy_domain(domain)):
 
-            tor_dict = get_tor_site_source(domain)
+            tor_dict = get_tor_site_source(origin_address)
             tor_source = tor_dict["source"]
             title = tor_dict["title"]
 
@@ -114,7 +113,7 @@ def analyze_onions_from_file(file_path: str) -> None:
             if not origin_address == "":
                 analyze_onion_address("file_import", origin_address)
             pbar.update(1)
-            
+
         pbar.close()
         
     except Exception as e:
