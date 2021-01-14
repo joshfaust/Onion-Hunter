@@ -68,7 +68,7 @@ if __name__ == "__main__":
         required=False,
         dest="aws_api",
         default=False,
-        help="Upload compressed flight data to S3"
+        help="Upload onion.db to S3"
     )
 
     args = parser.parse_args()

@@ -111,10 +111,10 @@ usage: Hunt.py [-h] [-s | -f  | -p | -n] [--s3]
 optional arguments:
   -h, --help    show this help message and exit
   -s, --scan    Scan All The Things
-  -f , --file   Import Onions from txt file
+  -f, --file    Import Onions from txt file
   -p, --purge   Purge the whole database
   -n, --new     Create a fresh/new Database
-  --s3          Upload compressed flight data to S3
+  --s3          Upload onion.db to S3
 ----
 
 ++++
