@@ -160,3 +160,34 @@ def is_duplicate_onion(n_hash: str) -> bool:
         return True  # Exists in databases
     except Exception as e:
         print(f"[!] Check Duplication ERROR: {e}")
+
+
+def create_new_database():
+    table1 = """CREATE TABLE ONIONS
+(ID INTEGER PRIMARY KEY AUTOINCREMENT,
+DATE_FOUND TEXT NOT NULL,
+DOMAIN_SOURCE TEXT NOT NULL,
+URI TEXT NOT NULL,
+URI_TITLE TEXT,
+DOMAIN_HASH TEXT NOT NULL,
+KEYWORD_MATCHES TEXT,
+KEYWORD_MATCHES_SUM INT,
+INDEX_SOURCE TEXT NOT NULL);"""
+    table2 = """CREATE TABLE FRESH_ONION_SOURCES
+(ID INTEGER PRIMARY KEY AUTOINCREMENT,
+URI TEXT NOT NULL,
+DOMAIN_HASH TEXT NOT NULL,
+FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
+    table3 = """CREATE TABLE SEEN_ONIONS
+(ID INTEGER PRIMARY KEY AUTOINCREMENT,
+DATE_FOUND TEXT NOT NULL,
+URI TEXT NOT NULL,
+DOMAIN_HASH TEXT NOT NULL,
+FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
+    cur.execute(table1)
+    conn.commit()
+    cur.execute(table2)
+    conn.commit()
+    cur.execute(table3)
+    conn.commit()
+

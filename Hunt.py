@@ -9,6 +9,7 @@ from tqdm import tqdm
 from datetime import date
 from src.tor_web_requests import is_tor_established, check_tor_connection
 from src import config
+from src import db_manager as db
 
 import src.utilities as util
 import src.reddit as reddit
@@ -45,6 +46,14 @@ if __name__ == "__main__":
         dest="purge",
         help="Purge the whole database",
     )
+    me.add_argument(
+        "-n",
+        "--new",
+        action="store_true",
+        default=False,
+        dest="new_db",
+        help="Create a fresh/new Database"
+    )
     parser.add_argument(
         "--s3",
         action="store_true",
@@ -55,6 +64,10 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    if args.new_db:
+        db.create_new_database()
+        exit(0)
 
     if args.scan or args.file_data:
         if not is_tor_established():
