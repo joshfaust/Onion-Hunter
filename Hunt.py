@@ -41,9 +41,7 @@ def check_db(using_aws: bool):
     else:
         logging.info("No Change in DB. Continuing")
 
-# ==================================#
-# MAIN                              #
-# ==================================#
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -144,12 +142,12 @@ if __name__ == "__main__":
             exit(1)
 
     elif args.purge:
-        DB = db_manager.db_manager()
+        db = db_manager.db_manager()
         last_chance_check = input(
             "[!] This will DELETE All Data in DB - Are You Sure? (Y|N): "
         )
         if last_chance_check.lower() == "y" or last_chance_check.lower() == "yes":
-            DB.deleteAll()
+            db.delete_all_db_data()
         else:
             print("[i] Exiting.")
             exit(0)

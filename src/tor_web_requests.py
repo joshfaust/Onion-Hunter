@@ -6,11 +6,11 @@ from bs4 import BeautifulSoup
 from src import config
 conf = config.configuration()
 
+
 def get_tor_site_source(uri: str) -> dict:
     """
     Extract HTML source from a uri
     """
-
     timeout = {"source": "timeout", "title": "timeout"}
     try:
 
@@ -97,5 +97,4 @@ def check_tor_connection() -> None:
 
     except Exception as e:
         logging.error(f"While checking the TOR connection, an error occured:{e}")
-        print(f"[!] Check Connection ERROR: {e}")
         exit(1)

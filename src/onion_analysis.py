@@ -11,6 +11,7 @@ from src.tor_web_requests import get_tor_site_source
 
 CONFIG = config.configuration()
 
+
 def find_all_onion_addresses(source: str) -> list:
     """
     finds all .onion domains gived HTML source or other text. 
@@ -23,6 +24,11 @@ def find_all_onion_addresses(source: str) -> list:
 
 
 def clean_onion_address(domain: str) -> str:
+    """
+    Looks for characters we don't really want in our domain and
+    removes them since the .onion regex pulls in things we sometimes
+    do not want. 
+    """
     if "<" in domain:
         domain = domain.split("<")[0]
     if (":80" in domain):
@@ -59,7 +65,7 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
     try:
         matches = []             # Array to keep matched words.
         found_addresses = []        # placeholder for newly found onion addresses.
-        domain_hash = util.getSHA256(domain)
+        domain_hash = util.get_sha256(domain)
         domain_status = None
 
         # Verify it's not a duplicate
@@ -75,20 +81,20 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
 
                 # If the onion address meets the "Fresh Onions" criteria, add to table
                 if (util.is_fresh_onion_site(tor_source)):
-                    DB.freshInsert(str(domain), str(domain_hash))
+                    DB.fresh_onions_insert(str(domain), str(domain_hash))
 
                 # Search for keywords in source.
                 matches = get_onion_source_keywords(tor_source)
-                DB.onionsInsert(origin_address, domain, title, domain_hash,
+                DB.onions_insert(origin_address, domain, title, domain_hash,
                                 str(matches), str(len(matches)), tor_source)
-                DB.seen_onions_insert(domain, util.getSHA256(domain))
+                DB.seen_onions_insert(domain, util.get_sha256(domain))
 
                 # add any new onions found
                 found_addresses = find_all_onion_addresses(tor_source)
                 domain_status = "Domain has been Analyzed. ONIONS table contains results"
 
             else:
-                DB.seen_onions_insert(domain, util.getSHA256(domain))
+                DB.seen_onions_insert(domain, util.get_sha256(domain))
                 domain_status = "Domain Timed Out. Doesn't look to be up."
         else:
             domain_status = "This is a Duplicate Domain, We've Already Analyzed this"
@@ -124,7 +130,7 @@ def analyze_onions_from_file(file_path: str) -> None:
         pbar.close()
         
     except Exception as e:
-        print(f"[!] Import From File ERROR: {e}")
+        logging.error(f"analyze_onions_from_file() ERROR:{e}")
         exit(1)
 
 
@@ -145,7 +151,7 @@ def scrape_known_fresh_onions() -> None:
     with the .onion address we have denoted as Fresh in the SQLITE3 DB,
     go an analyze each of the sites for new domains. 
     """
-    domains = DB.getFreshOnionDomains()
+    domains = DB.get_fresh_onion_domains()
 
     # Iterate through the known Fresh Onions domains/lists
     for i, origin_address in enumerate(domains):
@@ -164,11 +170,15 @@ def scrape_known_fresh_onions() -> None:
             pbar.close()
 
         except Exception as e:
-            logging.error(f"scrape_known_fresh_onions ERROR:{e}")
-            exit(0)
+            logging.error(f"scrape_known_fresh_onions() ERROR:{e}")
+            exit(1)
 
 
 def deep_paste_search() -> None:
+    """
+    Scrapes the darknet deeppaste site (pastebin essentially)
+    for domains and keyworkds. 
+    """
     md5_uri_list = []
     deep_paste_keys = ['http://depastedihrn3jtw.onion/last.php',
                        'http://depastedihrn3jtw.onion/top.php']
@@ -195,4 +205,4 @@ def deep_paste_search() -> None:
             pbar.close()
             
     except Exception as e:
-        print(f"[!] Error: {e}")
+        logging.error(f"deep_paste_search() ERROR:{e}")

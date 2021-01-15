@@ -7,7 +7,9 @@ CONFIG = config.configuration()
 
 
 def _get_api_keys() -> tuple:
-
+    """
+    Pull the AWS Secrets from config.py
+    """
     access_key = CONFIG.aws_access_key
     secret_key = CONFIG.aws_secret_key
     return (secret_key, access_key)

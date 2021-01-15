@@ -7,6 +7,8 @@ from tqdm import tqdm
 
 from src import utilities as util
 from src import onion_analysis as onion
+from src import config
+conf = config.configuration()
 
 
 """
@@ -35,23 +37,16 @@ DOMAIN_HASH TEXT NOT NULL,
 FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));
 """
 
-
-# ---------------------------------------|
-# Database Manager Class                 |
-#                                        |
-# Author: @jfaust0                       |
-#                                        |
-# Description: Handles all of the DB     |
-# communication.                         |
-# ---------------------------------------|
-
 # Global
 databaseFile = "onion.db"
 conn = sqlite3.connect(databaseFile)
 cur = conn.cursor()
 
-# Deletes all data from the DB and resets the tables index values
-def deleteAll():
+
+def delete_all_db_data() -> None:
+    """
+    Deletes all data from the DB and resets the tables index values
+    """
     try:
         cmd0 = "delete from sqlite_sequence"
         cmd1 = "delete from FRESH_ONION_SOURCES"
@@ -67,36 +62,52 @@ def deleteAll():
         conn.commit()
         print("[i] All Data has been deleted from all tables.")
     except Exception as e:
-        print(e)
-        exit(0)
+        logging.error(f"delete_all_db_data() ERROR:{e}")
 
 
-# Insert into the ONIONS table
-def onionsInsert(DS, URI, UT, DH, KM, KMS, IS):
+def onions_insert(DS: str, URI: str, UT: str, DH: str, KM: str, KMS: str, IS: str) -> None:
+    """
+    Insert a new row into the ONIONS table
+    """
     try:
 
         cmd = """INSERT INTO ONIONS (DATE_FOUND, DOMAIN_SOURCE, URI, URI_TITLE, DOMAIN_HASH, KEYWORD_MATCHES, KEYWORD_MATCHES_SUM, INDEX_SOURCE) VALUES(?,?,?,?,?,?,?,?)"""
         timestamp = datetime.datetime.now()
         source_code = base64.encodebytes(str(IS).encode("utf-8"))
-        data = (
-            str(timestamp),
-            str(DS),
-            str(URI),
-            str(UT),
-            str(DH),
-            str(KM),
-            str(KMS),
-            source_code,
-        )
+        if conf.save_html_source_to_db:
+            data = (
+                str(timestamp),
+                str(DS),
+                str(URI),
+                str(UT),
+                str(DH),
+                str(KM),
+                str(KMS),
+                source_code,
+            )
+        else:
+            data = (
+                str(timestamp),
+                str(DS),
+                str(URI),
+                str(UT),
+                str(DH),
+                str(KM),
+                str(KMS),
+                "",
+            )
+
         conn.execute(cmd, data)
         conn.commit()
 
     except Exception as e:
-        print(f"[!] Onions ERROR: {e}")
+        logging.error(f"onions_insert() ERROR:{e}")
 
 
-# Insert into the ONIONS table
 def seen_onions_insert(domain: str, domain_hash: str) -> None:
+    """
+    Insert a new row into the SEEN_ONIONS table
+    """
     try:
 
         cmd = """INSERT INTO SEEN_ONIONS (DATE_FOUND, URI, DOMAIN_HASH) VALUES(?,?,?)"""
@@ -107,11 +118,12 @@ def seen_onions_insert(domain: str, domain_hash: str) -> None:
 
     except Exception as e:
         logging.error(f"seen_onions_insert() ERROR:{e}")
-        print(f"[!] Onions ERROR: {e}")
 
 
-# Insert into the FRESH ONIONS SOURCES table
-def freshInsert(URI, DH):
+def fresh_onions_insert(URI: str, DH: str) -> None:
+    """
+    Insert a new row into the FRESH ONIONS SOURCES table
+    """
     try:
         cmd = "INSERT INTO FRESH_ONION_SOURCES (URI, DOMAIN_HASH)  VALUES (?,?)"
         conn.execute(
@@ -124,24 +136,27 @@ def freshInsert(URI, DH):
         conn.commit()
 
     except Exception as e:
-        print(f"[!] Fresh Insert ERROR: {e}")
+        logging.error(f"fresh_onions_insert() ERROR:{e}")
 
 
-# Pull all of the Fresh Onion Domains from the DB
-## Returns: List Object
-def getFreshOnionDomains():
+def get_fresh_onion_domains() -> list:
+    """
+    Get a list of all the domains from FRESH_ONIONS_SOURCES
+    """
     try:
         cmd = "SELECT URI FROM FRESH_ONION_SOURCES"
         cur.execute(cmd)
         data = cur.fetchall()
         return data
     except Exception as e:
-        print(f"[!] Get Fresh ERROR: {e}")
+        logging.error(f"get_fresh_onion_domains() ERROR:{e}")
 
 
-# Checks if a Domain alread exists within the ONIONS table
-## Returns: Boolean
 def is_duplicate_onion(n_hash: str) -> bool:
+    """
+    Checks if a Domain alread exists within the ONIONS or 
+    the SEEM_ONIONS table to avoid duplication
+    """
     try:
         cmd1 = "SELECT count(DOMAIN_HASH) FROM ONIONS WHERE DOMAIN_HASH =?"
         cur.execute(cmd1, (n_hash,))
@@ -160,35 +175,41 @@ def is_duplicate_onion(n_hash: str) -> bool:
             return False  # Does not exists in database
         return True  # Exists in databases
     except Exception as e:
-        print(f"[!] Check Duplication ERROR: {e}")
+        logging.error(f"is_duplicate_onion() ERROR:{e}")
 
 
-def create_new_database():
-    table1 = """CREATE TABLE ONIONS
-(ID INTEGER PRIMARY KEY AUTOINCREMENT,
-DATE_FOUND TEXT NOT NULL,
-DOMAIN_SOURCE TEXT NOT NULL,
-URI TEXT NOT NULL,
-URI_TITLE TEXT,
-DOMAIN_HASH TEXT NOT NULL,
-KEYWORD_MATCHES TEXT,
-KEYWORD_MATCHES_SUM INT,
-INDEX_SOURCE TEXT NOT NULL);"""
-    table2 = """CREATE TABLE FRESH_ONION_SOURCES
-(ID INTEGER PRIMARY KEY AUTOINCREMENT,
-URI TEXT NOT NULL,
-DOMAIN_HASH TEXT NOT NULL,
-FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
-    table3 = """CREATE TABLE SEEN_ONIONS
-(ID INTEGER PRIMARY KEY AUTOINCREMENT,
-DATE_FOUND TEXT NOT NULL,
-URI TEXT NOT NULL,
-DOMAIN_HASH TEXT NOT NULL,
-FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
-    cur.execute(table1)
-    conn.commit()
-    cur.execute(table2)
-    conn.commit()
-    cur.execute(table3)
-    conn.commit()
+def create_new_database() -> None:
+    """
+    Creates a brand new onions.db
+    """
+    try:
+        table1 = """CREATE TABLE ONIONS
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    DATE_FOUND TEXT NOT NULL,
+    DOMAIN_SOURCE TEXT NOT NULL,
+    URI TEXT NOT NULL,
+    URI_TITLE TEXT,
+    DOMAIN_HASH TEXT NOT NULL,
+    KEYWORD_MATCHES TEXT,
+    KEYWORD_MATCHES_SUM INT,
+    INDEX_SOURCE TEXT NOT NULL);"""
+        table2 = """CREATE TABLE FRESH_ONION_SOURCES
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    URI TEXT NOT NULL,
+    DOMAIN_HASH TEXT NOT NULL,
+    FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
+        table3 = """CREATE TABLE SEEN_ONIONS
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    DATE_FOUND TEXT NOT NULL,
+    URI TEXT NOT NULL,
+    DOMAIN_HASH TEXT NOT NULL,
+    FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
+        cur.execute(table1)
+        conn.commit()
+        cur.execute(table2)
+        conn.commit()
+        cur.execute(table3)
+        conn.commit()
+    except Exception as e:
+        logging.error(f"create_new_database() ERROR:{e}")
 

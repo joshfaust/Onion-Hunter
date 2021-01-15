@@ -13,7 +13,7 @@ from src import onion_analysis as onion
 
 def gzip_file(filepath: str, output_filename: str) -> bool:
     """ 
-    Gzip any file
+    Gzip compress any file
     """
     try:
         with open(filepath, "rb") as f_in:
@@ -23,6 +23,7 @@ def gzip_file(filepath: str, output_filename: str) -> bool:
     except Exception as e:
         logging.error(f"gzip ERROR:{e}")
         return False
+
 
 def write_to_s3(filename: str, bucket_name: str) -> None:
     """
@@ -53,18 +54,19 @@ def has_database_changed(previous_hash: str, current_hash: str) -> bool:
         return True
     return False
 
-# Gets the SHA256 hash for a string
-## Returns: String
-def getSHA256(data):
+
+def get_sha256(data: str) -> str:
+    """
+    Get the SHA256 value of a string
+    """
     try:
         n_hash = hashlib.sha256(str(data).strip().encode()).hexdigest()
         return n_hash
     except Exception as e:
         logging.error(f"Utilities_SHA256_ERROR:{e}")
-        print(f"[!] ERROR: {e}")
 
 
-def get_file_md5_hash(filename: str):
+def get_file_md5_hash(filename: str) -> str:
     """
     Get an MD5 hash of a file
     """
@@ -80,8 +82,12 @@ def get_file_md5_hash(filename: str):
         return file_hash.hexdigest()
 
 
-# Get the MD5's in the deep psate site.
-def deep_paste_enum(onion_source: str):
+def deep_paste_enum(onion_source: str) -> list:
+    """
+    DeepPaste uses MD5SUM's for each post, this function
+    enumerates all of the MD5 hashes found that will be used
+    to compile known/valid deeppaste domains. 
+    """
     md5_list = []
     try:
         md5_list = re.findall(r"md5=[0-9a-fA-F]{32}", onion_source)
@@ -91,8 +97,10 @@ def deep_paste_enum(onion_source: str):
         return md5_list
 
 
-# Checks to see if a domain is a Fresh Onion
 def is_fresh_onion_site(source: str) -> bool:
+    """
+    Checks to see if a domain is a Fresh Onion
+    """
     try:
         keyword_index = 0
         keywords = [
