@@ -1,78 +1,129 @@
 import hashlib
 import re
-import certifi
-import urllib3
+import os
+import requests
+import gzip
+import time
+import datetime
+import logging
 
-# ---------------------------------------|
-# Utilities Class                        |
-#                                        |
-# Author: @jfaust0                       |
-#                                        |
-# Description: Handles any random or     |
-# otherwise needed functions             |
-# ---------------------------------------|
+from src import aws as aws
+from src import onion_analysis as onion
 
-class util:
 
-    def __init__(self):
-        self.i = 0
+def gzip_file(filepath: str, output_filename: str) -> bool:
+    """ 
+    Gzip compress any file
+    """
+    try:
+        with open(filepath, "rb") as f_in:
+            with gzip.open(output_filename, "wb") as f_out:
+                f_out.writelines(f_in)
+        return True
+    except Exception as e:
+        logging.error(f"gzip ERROR:{e}")
+        return False
 
-    # Gets the SHA256 hash for a string
-    ## Returns: String
-    def getSHA256(self, data):
-        try:
-            n_hash = hashlib.sha256(str(data).strip().encode()).hexdigest()
-            return n_hash
-        except Exception as e:
-            print(f"[!] ERROR: {e}")
 
-    # Pulls all of the oninos addresses resident on a single HTML page
-    def getOnions(self, data):
-        addresses = re.findall(r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+.onion', data)
-        return addresses
+def write_to_s3(filename: str, bucket_name: str) -> None:
+    """
+    Write a file to AWS S3
+    """
+    if not aws.check_bucket_exists(bucket_name):
+        if not aws.create_bucket(bucket_name):
+            logging.error(f"Unable to Create bucket")
+            exit(1)
+    if not aws.upload_to_s3(bucket_name, filename, filename):
+        logging.error(f"Unable to upload gzipped file to S3")
 
-    # Get the MD5's in the deep psate site.
-    def deepPasteEnum(self, data):
-        md5_list = []
-        try:
-            md5_list = re.findall(r'md5=[0-9a-fA-F]{32}', data)
-            return md5_list
-        except Exception as e:
-            print(f"[!] Error: {e}")
-            return md5_list
 
-    # Checks to see if a domain is a Fresh Onion
-    def isFreshOnionRepo(self, source):
-        try:
-            keyword_index = 0
-            keywords = ["fresh onions", "fresh onion", "freshonion", "freshonions", "new", "fresh", "onions", "onion"]
-            count = len(self.getOnions(source))
+def chill() -> None:
+    """
+    pause the program for a little bit to rest the API loads
+    """
+    print(f"\n[i] {datetime.datetime.now()}: Sleeping for 20 Minutes.")
+    time.sleep(1200)
+    print(f"[i] {datetime.datetime.now()}: Restarting Search.")
 
-            # Checks if any known keywords are in source code:
-            for word in keywords:
-                if (word.lower() in source.lower()):
-                    keyword_index += 1
 
-            # Determine if this site is a Fresh Onion site:
-            if (count >= 50 and keyword_index > 2):
-                return True  # This is probably a Fresh Onion site
-            return False  # Naa, this is just a regular onion address.
+def has_database_changed(previous_hash: str, current_hash: str) -> bool:
+    """
+    comapre DB hashes and determine if we need to upload to S3
+    """
+    if previous_hash != current_hash:
+        return True
+    return False
 
-        except Exception as e:
-            print(f"[!] Error: {e}")
 
-    # Check if we are truly connected to TOR.
-    def isTorEstablished(self):
-        try:
-            url = "https://check.torproject.org/"
-            user_agent = {'user-agent': 'Mozilla/5.0 (Windows NT 6.1; rv:60.0) Gecko/20100101 Firefox/60.0'}
-            to = urllib3.Timeout(connect=7, read=2)
-            http = urllib3.PoolManager(cert_reqs='CERT_REQUIRED', ca_certs=certifi.where(), headers=user_agent,
-                                       retries=2, timeout=to)
-            html = http.request("GET", url)
-            if ("congratulations" in str(html.data).lower()):
-                return True
-            return False
+def get_sha256(data: str) -> str:
+    """
+    Get the SHA256 value of a string
+    """
+    try:
+        n_hash = hashlib.sha256(str(data).strip().encode()).hexdigest()
+        return n_hash
+    except Exception as e:
+        logging.error(f"Utilities_SHA256_ERROR:{e}")
 
-        except Exception as e:
-            return False
+
+def get_file_md5_hash(filename: str) -> str:
+    """
+    Get an MD5 hash of a file
+    """
+    if not os.path.exists(filename):
+        logging.error(f"get_file_md5_hash() File Does Not Exist: {filename}")
+    else:
+        with open(filename, "rb") as f:
+            file_hash = hashlib.md5()
+            chunk = f.read(8192)
+            while chunk:
+                file_hash.update(chunk)
+                chunk = f.read(8192)
+        return file_hash.hexdigest()
+
+
+def deep_paste_enum(onion_source: str) -> list:
+    """
+    DeepPaste uses MD5SUM's for each post, this function
+    enumerates all of the MD5 hashes found that will be used
+    to compile known/valid deeppaste domains. 
+    """
+    md5_list = []
+    try:
+        md5_list = re.findall(r"md5=[0-9a-fA-F]{32}", onion_source)
+        return md5_list
+    except Exception as e:
+        logging.error(f"MD5SUM_ERROR:{e}")
+        return md5_list
+
+
+def is_fresh_onion_site(source: str) -> bool:
+    """
+    Checks to see if a domain is a Fresh Onion
+    """
+    try:
+        keyword_index = 0
+        keywords = [
+            "fresh onions",
+            "fresh onion",
+            "freshonion",
+            "freshonions",
+            "new",
+            "fresh",
+            "onions",
+            "onion",
+        ]
+        count = len(onion.find_all_onion_addresses(source))
+
+        # Checks if any known keywords are in source code:
+        for word in keywords:
+            if word.lower() in source.lower():
+                keyword_index += 1
+
+        # Determine if this site is a Fresh Onion site:
+        if count >= 50 and keyword_index > 2:
+            return True  # This is probably a Fresh Onion site
+        return False  # Naa, this is just a regular onion address.
+
+    except Exception as e:
+        logging.error(f"is_fresh_onion_site() ERROR:{e}")

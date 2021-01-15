@@ -1,4 +1,4 @@
-= Onion-Hunter
+= Onion-Hunter 2.0
 Joshua.Faust@sevrosecurity.com
 :toc:
 :toclevels: 3
@@ -12,35 +12,33 @@ image:https://www.codefactor.io/repository/github/cribdragg3r/onion-hunter/badge
 +++
 <a href ="https://sevrosecurity.com">
   <img src="docs/tor-icon.png"
-    title="Simple-Loader" align="left" height=100 length=100 />
+    title="Onion Hunter" align="left" height=100 length=100 />
     </a>
 +++
 
-### About
+== About
 This package is designed to help anyone hunt for Onion addresses subject to a set of keywords set by the user. The primary
 design characteristic is to enable the user to define attributes/keywords that they would like to hunt on. All customizable
 attributes are located within the `src/config.py` python file. This is the only object that should be edited by the user.
 
-For details about the Onion-Hunter Classes and API, please visit https://github.com/cribdragg3r/Onion-Hunter/wiki[The Wiki]
 
-
----
-### Requirements
+== Requirements
 
 * *Python Version:* Python 3+
 * *Packages:* See Requirements.txt
-* *Tor:* Must be able to route traffic via a Tor Proxy
-** Use link:https://www.whonix.org/[Whonix] or link:https://tails.boum.org/[Tails]
+* *Tor:* Must be able to route traffic via a Tor Proxy. You can use:
+** https://www.whonix.org/[Whonix] 
+** https://tails.boum.org/[Tails] 
+** See my AWS EC2 Setup below
 
----
 
-### Usage
+== Usage
 
-Before running `Hunt.py` for the first time, please follow these steps:
+The `src/config.py` has several configurable options that you can use. 
 
-* Install all requirements:
+=== Mandatory Configurations
 
-`pip install -r requirements.txt`
+* Install all requirements: `pip install -r requirements.txt`
 
 * Create a https://www.reddit.com/prefs/apps[Reddit API Token]
 * Add Reddit API objects to `src/config.py`
@@ -51,56 +49,119 @@ self.r_username = ""
 self.r_password = ""
 self.r_client_id = ""
 self.r_client_secret = ""
-self.r_user_agent = ""
 ----
 
-* Add Keywords to Hunt on to `src/config.py`
+* Add Keywords to Hunt on to `src/config.py`. These keywords will be compared against TOR site source to and saved the the SQLITE3 DB.
+
+=== Optional Configurations
+
+* Ability to use the Polipo Proxy (See AWS EC2 Setup).
+[source, python]
+----
+# Network Setup
+## True = I am using the polipo Proxy on a Linux Host
+## False = I am using Tails or Whonix
+self.use_proxy = False
+----
+
+* Upload the Database to S3
+[source, python]
+----
+# AWS Credentials
+self.aws_access_key = ""
+self.aws_secret_key = ""
+----
+
+* Save all TOR HTML source as Base64 to the ONIONS table.
+** _NOTE: This will bloat the DB significantly_
+[source, python]
+----
+# Database Setup:
+## True - Will save the HTML source as B64 to ONIONS table (Will Bloat the DB!)
+## False -Will not save the HTML source at all.
+self.save_html_source_to_db = False
+----
 
 [source, python]
 ----
 self.keywords = ["Example_keyword_1", "Example_keyword_2"]
 ----
 
-#### Examples
+=== Use AWS EC2
+[%collapsible]
+====
+It's totally understandable if you don't want TOR to be running in your LAN. As such, here are instructions on how to get running in AWS (Or any other cloud provider).
+
+. Create an Ubuntu 18.04 LTS host (I used AWS t2.small)
+. Install the TOR service per https://2019.www.torproject.org/docs/debian.html.en[TOR's Documentation]
+. Install Polipo: `apt-get install polipo`
+. Edit Polipo's config: `/etc/polipo/config`
+[source, conf]
+----
+allowedClients = 127.0.0.1, 192.168.1.0/24 # Expose your network (modify accordingly)
+socksParentProxy = "localhost:9050"
+socksProxyType = socks5
+proxyAddress = "127.0.0.1"    # IPv4 only
+----
+[start=5]
+. Restart the Polipo service: `systemctl restart polipo`
+. Edit Onion-Hunter config to use the proxy
+[source, python]
+----
+# Network Setup
+# True = I am using the polipo Proxy on a Linux Host
+# False = I am using Tails or Whonix
+self.use_proxy = True
+----
+====
+
+=== Use AWS S3
+[%collapsible]
+====
+Onion-Hunter now has an option to upload the `onion.db` to S3 after each scan interation. To use this feature you must edit the config `src/config.py` and add your AWS access and secret keys. 
+
+[source, conf]
+----
+# AWS Credentials
+self.aws_access_key = "access_key"
+self.aws_secret_key = "secret_key"
+----
+
+====
+
+== Examples
 
 [source, text]
 ----
-python3 Hunt.py -h
-usage: Hunt.py [-h] [-s | -f  | -p | -c]
+python Hunt.py -h
+usage: Hunt.py [-h] [-s | -f  | -p | -n] [--s3]
 
 optional arguments:
   -h, --help    show this help message and exit
   -s, --scan    Scan All The Things
-  -f, --file   Import Onions from txt file
+  -f, --file    Import Onions from txt file
   -p, --purge   Purge the whole database
-  -c, --clean   Cleanup the DB
+  -n, --new     Create a fresh/new Database
+  --s3          Upload onion.db to S3
 ----
 
 ++++
 <center>
-<img src="docs/hunting.PNG" title="Simple-Loader" align="center" height=300 length=300 />
+<img src="docs/search.png" title="Searching" align="center" height=300 length=300 />
 Figure 1. Reddit Search
 <br>
 <br>
-<img src="docs/purge.PNG" title="Simple-Loader" align="center" height=100 length=100 />
+<img src="docs/purge.PNG" title="Purging" align="center" height=100 length=100 />
 Figure 2. Purging the Database
 </center>
 ++++
 
----
-### Continuing Work
-
-1. Add a reporting class to help cleaning digest the SQL database into a CSV or Excel document.
-** Possibly use Pandas for report generation.
-
----
-
-### Contact
+== Contact
 
 ++++
-<a href ="https://twitter.com/JFaust0">
+<a href ="https://twitter.com/JFaust_">
   <img src="https://cdn.icon-icons.com/icons2/800/PNG/512/_twitter_icon-icons.com_65787.png"
-    title="Twitter (@JFaust0)" align="left" height=50 length=50 />
+    title="Twitter (@JFaust_)" align="left" height=50 length=50 />
     </a>
 
 <a href ="https://sevrosecurity.com">
