@@ -34,11 +34,11 @@ attributes are located within the `src/config.py` python file. This is the only 
 
 == Usage
 
-Before running `Hunt.py` for the first time, please follow these steps:
+The `src/config.py` has several configurable options that you can use. 
 
-* Install all requirements:
+=== Mandatory Configurations
 
-`pip install -r requirements.txt`
+* Install all requirements: `pip install -r requirements.txt`
 
 * Create a https://www.reddit.com/prefs/apps[Reddit API Token]
 * Add Reddit API objects to `src/config.py`
@@ -49,10 +49,38 @@ self.r_username = ""
 self.r_password = ""
 self.r_client_id = ""
 self.r_client_secret = ""
-self.r_user_agent = ""
 ----
 
-* Add Keywords to Hunt on to `src/config.py`
+* Add Keywords to Hunt on to `src/config.py`. These keywords will be compared against TOR site source to and saved the the SQLITE3 DB.
+
+=== Optional Configurations
+
+* Ability to use the Polipo Proxy (See AWS EC2 Setup).
+[source, python]
+----
+# Network Setup
+## True = I am using the polipo Proxy on a Linux Host
+## False = I am using Tails or Whonix
+self.use_proxy = False
+----
+
+* Upload the Database to S3
+[source, python]
+----
+# AWS Credentials
+self.aws_access_key = ""
+self.aws_secret_key = ""
+----
+
+* Save all TOR HTML source as Base64 to the ONIONS table.
+** _NOTE: This will bloat the DB significantly_
+[source, python]
+----
+# Database Setup:
+## True - Will save the HTML source as B64 to ONIONS table (Will Bloat the DB!)
+## False -Will not save the HTML source at all.
+self.save_html_source_to_db = False
+----
 
 [source, python]
 ----
@@ -78,7 +106,7 @@ proxyAddress = "127.0.0.1"    # IPv4 only
 [start=5]
 . Restart the Polipo service: `systemctl restart polipo`
 . Edit Onion-Hunter config to use the proxy
-[source, conf]
+[source, python]
 ----
 # Network Setup
 # True = I am using the polipo Proxy on a Linux Host
@@ -119,11 +147,11 @@ optional arguments:
 
 ++++
 <center>
-<img src="docs/hunting.PNG" title="Simple-Loader" align="center" height=300 length=300 />
+<img src="docs/search.png" title="Searching" align="center" height=300 length=300 />
 Figure 1. Reddit Search
 <br>
 <br>
-<img src="docs/purge.PNG" title="Simple-Loader" align="center" height=100 length=100 />
+<img src="docs/purge.PNG" title="Purging" align="center" height=100 length=100 />
 Figure 2. Purging the Database
 </center>
 ++++
