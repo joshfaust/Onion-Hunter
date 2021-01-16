@@ -67,7 +67,7 @@ def is_unworthy_domain(domain_name: str) -> bool:
     """
     Check if domain is a known, not interesting domain
     """
-    bad_domains = ["facebook", "facebo", "nytimes", "nytime", "twitter.com"]
+    bad_domains = ["facebook", "facebo", "nytimes", "nytime", "twitter.com", "beautybo"]
     return bool([f for f in bad_domains if (f in str(domain_name))])
 
 
@@ -131,7 +131,7 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
                 f.write(address + "\n")
         f.close()
 
-        # Upload the DB every 20 min.
+        # Upload the DB every 10 min.
         global START_TIME
         runtime = util.get_script_runtime_minutes(START_TIME)
 
