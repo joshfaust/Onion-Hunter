@@ -12,6 +12,7 @@ import logging
 from src import aws as aws
 from src import config
 from src import onion_analysis as onion
+from src import db_manager as db
 
 from datetime import datetime as dt
 from datetime import date, timedelta
@@ -154,30 +155,33 @@ def is_fresh_onion_site(source: str) -> bool:
     Checks to see if a domain is a Fresh Onion
     """
     try:
-        keyword_index = 0
-        keywords = [
-            "fresh onions",
-            "fresh onion",
-            "freshonion",
-            "freshonions",
-            "new",
-            "fresh",
-            "onions",
-            "onion",
-        ]
+        if not db.is_duplicate_fresh_onion(domain):
+            keyword_index = 0
+            keywords = [
+                "fresh onions",
+                "fresh onion",
+                "freshonion",
+                "freshonions",
+                "new",
+                "fresh",
+                "onions",
+                "onion",
+            ]
 
-        onion_addresses = onion.find_all_onion_base_addresses(source)
-        count = len(onion_addresses)
+            onion_addresses = onion.find_all_onion_base_addresses(source)
+            count = len(onion_addresses)
 
-        # Checks if any known keywords are in source code:
-        for word in keywords:
-            if word.lower() in source.lower():
-                keyword_index += 1
+            # Checks if any known keywords are in source code:
+            for word in keywords:
+                if word.lower() in source.lower():
+                    keyword_index += 1
 
-        # Determine if this site is a Fresh Onion site:
-        if count >= 50 and keyword_index > 2:
-            return True  # This is probably a Fresh Onion site
-        return False  # Naa, this is just a regular onion address.
+            # Determine if this site is a Fresh Onion site:
+            if count >= 50 and keyword_index > 2:
+                return True  # This is probably a Fresh Onion site
+            return False  # Naa, this is just a regular onion address.
+        else:
+            return False # The URI already exists, skip it. 
 
     except Exception as e:
         exc_type, exc_obj, tb = sys.exc_info()

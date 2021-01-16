@@ -176,6 +176,21 @@ def is_duplicate_onion(n_hash: str) -> bool:
         logging.error(f"is_duplicate_onion() ERROR:{e}")
 
 
+def is_duplicate_fresh_onion(domain_hash: str) -> bool:
+    """
+    Check if a hash already exists in the FRESH_ONIONS DB
+    """
+    cmd2 = "SELECT count(DOMAIN_HASH) FROM FRESH_ONION_SOURCES WHERE DOMAIN_HASH =?"
+    cur.execute(cmd2, (n_hash,))
+    seen_onions_data = cur.fetchone()
+    seen_onions_data = str(seen_onions_data).split(",")[0].replace("(", "")
+    seen_onions_data = int(seen_onions_data)
+
+    if seen_onions_data <= 0:
+        return False  # Does not exists in database
+    return True  # Exists in databases
+
+
 def create_new_database() -> None:
     """
     Creates a brand new onions.db

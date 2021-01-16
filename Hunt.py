@@ -59,6 +59,14 @@ if __name__ == "__main__":
         dest="new_db",
         help="Create a fresh/new Database"
     )
+    me.add_argument(
+        "-d",
+        "--dedup",
+        action="store_true",
+        default=False,
+        dest="dedup",
+        help="Remove duplicate fresh onion entries"
+    )
     parser.add_argument(
         "--s3",
         action="store_true",
@@ -72,6 +80,10 @@ if __name__ == "__main__":
 
     if args.new_db:
         db.create_new_database()
+        exit(0)
+
+    if args.dedup:
+        db.dedup_fresh_onion_sources()
         exit(0)
 
     if args.scan or args.file_data:
