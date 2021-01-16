@@ -8,7 +8,45 @@ import datetime
 import logging
 
 from src import aws as aws
+from src import config
 from src import onion_analysis as onion
+
+from datetime import datetime as dt
+from datetime import date, timedelta
+
+#GLOBAL
+CONFIG = config.configuration()
+PREVIOUS_DB_HASH = ""
+DB_NAME = CONFIG.db_name
+
+
+def check_db_diff(using_aws: bool):
+    """
+    Check if the DB has changed and if so, upload to 
+    """
+    global PREVIOUS_DB_HASH, DB_NAME
+    current_hash = get_file_md5_hash(DB_NAME)
+
+    if using_aws and has_database_changed(PREVIOUS_DB_HASH, current_hash):
+
+        if (gzip_file(DB_NAME, f"{DB_NAME}.gz")):
+
+            write_to_s3(f"{DB_NAME}.gz", "onion-hunter", "databases")
+            os.remove(f"{DB_NAME}.gz")
+            logging.info(f"DB Change Detected, uploaded to S3:prev_hash={PREVIOUS_DB_HASH}:cur_hash={current_hash}")
+            PREVIOUS_DB_HASH = current_hash
+    else:
+        logging.info("No Change in DB. Continuing")
+
+
+def get_script_runtime(start_time: datetime) -> float:
+    """
+    Calculates the time difference from when the program
+    started to the current time
+    """
+    time_delta = dt.now() - start_time
+    time_delta_hours = divmod(time_delta.total_seconds(), 3600)[0]
+    return time_delta_hours
 
 
 def gzip_file(filepath: str, output_filename: str) -> bool:
@@ -25,7 +63,7 @@ def gzip_file(filepath: str, output_filename: str) -> bool:
         return False
 
 
-def write_to_s3(filename: str, bucket_name: str) -> None:
+def write_to_s3(filename: str, bucket_name: str, s3_folder_name: str) -> None:
     """
     Write a file to AWS S3
     """
@@ -33,8 +71,12 @@ def write_to_s3(filename: str, bucket_name: str) -> None:
         if not aws.create_bucket(bucket_name):
             logging.error(f"Unable to Create bucket")
             exit(1)
-    if not aws.upload_to_s3(bucket_name, filename, filename):
-        logging.error(f"Unable to upload gzipped file to S3")
+    if s3_folder_name is not None:
+        if not aws.upload_to_s3(bucket_name, filename, f"{s3_folder_name}/{filename}"):
+            logging.error(f"Unable to upload gzipped file to S3")
+    else:
+        if not aws.upload_to_s3(bucket_name, filename, filename):
+            logging.error(f"Unable to upload gzipped file to S3")
 
 
 def chill() -> None:
@@ -82,6 +124,14 @@ def get_file_md5_hash(filename: str) -> str:
         return file_hash.hexdigest()
 
 
+def get_string_md5_hash(data: str) -> str:
+    """
+    Get the MD5 hash of a string
+    """
+    hash = hashlib.md5(data.strip().encode()).hexdigest()
+    return hash
+
+
 def deep_paste_enum(onion_source: str) -> list:
     """
     DeepPaste uses MD5SUM's for each post, this function
@@ -113,7 +163,7 @@ def is_fresh_onion_site(source: str) -> bool:
             "onions",
             "onion",
         ]
-        count = len(onion.find_all_onion_addresses(source))
+        count = len(onion.find_all_onion_base_addresses(source))
 
         # Checks if any known keywords are in source code:
         for word in keywords:

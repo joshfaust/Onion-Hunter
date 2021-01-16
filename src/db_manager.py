@@ -10,6 +10,10 @@ from src import onion_analysis as onion
 from src import config
 conf = config.configuration()
 
+#GLOBAL
+databaseFile = conf.db_name
+conn = sqlite3.connect(databaseFile)
+cur = conn.cursor()
 
 """
 CREATE TABLE ONIONS
@@ -36,12 +40,6 @@ URI TEXT NOT NULL,
 DOMAIN_HASH TEXT NOT NULL,
 FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));
 """
-
-# Global
-databaseFile = "onion.db"
-conn = sqlite3.connect(databaseFile)
-cur = conn.cursor()
-
 
 def delete_all_db_data() -> None:
     """
@@ -212,4 +210,45 @@ def create_new_database() -> None:
         conn.commit()
     except Exception as e:
         logging.error(f"create_new_database() ERROR:{e}")
+
+
+def dedup_fresh_onion_sources():
+    print("[i] Cleaning Up FRESH_ONIONS Table")
+    cleaned_hashes = set()
+
+    # Get all of the hashes for the
+    cmd0 = "SELECT URI FROM FRESH_ONION_SOURCES"
+    cur.execute(cmd0)
+    uri_list = cur.fetchall()
+
+    # Delete the table's data:
+    cmd1 = "DELETE FROM FRESH_ONION_SOURCES"
+    cur.execute(cmd1)
+    conn.commit()
+
+    # Reset the PK index:
+    cmd2 = "delete from sqlite_sequence where name = \"FRESH_ONION_SOURCES\""
+    cur.execute(cmd2)
+    conn.commit()
+
+    # Pull base domains from onion and re-populate the DB
+    pbar = tqdm(total=len(uri_list))
+    for uri in uri_list:
+        uri = str(uri).split("'")[1]
+        cleaned_uri = onion.get_onion_base_address(uri)
+        cleaned_hash = util.get_sha256(uri)
+
+        if cleaned_hash not in cleaned_hashes:
+            cmd = "INSERT INTO FRESH_ONION_SOURCES (URI, DOMAIN_HASH)  VALUES (?,?)"
+            conn.execute(
+            cmd,
+            (
+                str(cleaned_uri),
+                str(cleaned_hash),
+            ),
+            )
+            conn.commit()
+            cleaned_hashes.add(cleaned_hash)
+
+        pbar.update(1)
 

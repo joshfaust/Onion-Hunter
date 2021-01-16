@@ -3,13 +3,12 @@ class configuration:
     def __init__(self):
 
         # Network Setup
-        ## True = I am using the polipo Proxy on a Linux Host
-        ## False = I am using Tails or Whonix
+        # True = I am using the polipo Proxy on a Linux Host
+        # False = I am using Tails or Whonix
         self.use_proxy = False
 
         # Database Setup:
-        ## True - Will save the HTML source as B64 to ONIONS table (Will Bloat the DB!)
-        ## False -Will not save the HTML source at all.
+        self.db_name = "onion.db"
         self.save_html_source_to_db = False
 
         # Reddit API Variables
@@ -46,6 +45,4 @@ class configuration:
             "reverseengineering",
         ]
 
-        # Onion-Hunter will search for these keywords in the HTML source code
-        # of onion domains and save matches to the ONIONS table. 
-        self.keywords = [ "add_Keywords" ]
+        self.keywords = ["Add", "Keywords", "here"]

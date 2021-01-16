@@ -6,21 +6,46 @@ from src import utilities as util
 from src import db_manager as DB
 from src import config
 
+from datetime import datetime as dt
 from tqdm import tqdm
 from src.tor_web_requests import get_tor_site_source
 
+#GLOBAL
 CONFIG = config.configuration()
-
+START_TIME = dt.now()
 
 def find_all_onion_addresses(source: str) -> list:
     """
-    finds all .onion domains gived HTML source or other text. 
+    finds all .onion domains given HTML source or other text. 
     """
     addresses = []
     dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion(?:\S+|)', source)
     for address in dirty_addresses:
         addresses.append(clean_onion_address(address))
     return addresses
+
+
+def find_all_onion_base_addresses(source: str) -> list:
+    """
+    finds all .onion domains base address given HTML 
+    source or other text. 
+    """
+    addresses = []
+    dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion)', source)
+    for address in dirty_addresses:
+        addresses.append(clean_onion_address(address))
+    return addresses
+
+
+def get_onion_base_address(domain: str) -> str:
+    """
+    extract the base onion address from a domain. 
+    """
+    base_address = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', domain)
+    if len(base_address) > 0:
+        return base_address[0]
+    else: 
+        return domain
 
 
 def clean_onion_address(domain: str) -> str:
@@ -81,7 +106,9 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
 
                 # If the onion address meets the "Fresh Onions" criteria, add to table
                 if (util.is_fresh_onion_site(tor_source)):
-                    DB.fresh_onions_insert(str(domain), str(domain_hash))
+                    base_domain = get_onion_base_address(domain)
+                    base_domain_hash = util.get_sha256(base_domain)
+                    DB.fresh_onions_insert(str(base_domain), str(base_domain_hash))
 
                 # Search for keywords in source.
                 matches = get_onion_source_keywords(tor_source)
@@ -104,6 +131,15 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
             for address in found_addresses:
                 f.write(address + "\n")
         f.close()
+
+        # Upload the DB every 20 min.
+        global START_TIME
+        runtime = util.get_script_runtime(START_TIME)
+        if runtime >= 0.20:
+            START_TIME = dt.now()
+            logging.info(f"[{dt.now()}]:20 minute DB check")
+            if CONFIG.aws_access_key != "":
+                util.check_db_diff(True)
 
         return domain_status
     except Exception as e:

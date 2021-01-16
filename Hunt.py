@@ -9,37 +9,14 @@ from tqdm import tqdm
 from datetime import date
 from src import aws as aws
 from src.tor_web_requests import is_tor_established, check_tor_connection
-from src import config
 from src import db_manager as db
+from src import utilities as util
 
-import src.utilities as util
 import src.reddit as reddit
 import src.onion_analysis as onion
 
 logname = f"tor_search_{date.today()}.log"
 logging.basicConfig(filename=logname, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
-
-#GLOBAL
-PREVIOUS_DB_HASH = ""
-DB_NAME = "onion.db"
-
-def check_db(using_aws: bool):
-    """
-    Check if the DB has changed and if so, upload to 
-    """
-    global PREVIOUS_DB_HASH, DB_NAME
-    current_hash = util.get_file_md5_hash(DB_NAME)
-
-    if using_aws and util.has_database_changed(PREVIOUS_DB_HASH, current_hash):
-
-        if (util.gzip_file(DB_NAME, "onion.db.gz")):
-
-            util.write_to_s3(f"{DB_NAME}.gz", "onion-hunter")
-            os.remove(f"{DB_NAME}.gz")
-            logging.info(f"DB Change Detected, uploaded to S3:prev_hash={PREVIOUS_DB_HASH}:cur_hash={current_hash}")
-            PREVIOUS_DB_HASH = current_hash
-    else:
-        logging.info("No Change in DB. Continuing")
 
 
 if __name__ == "__main__":
@@ -88,10 +65,10 @@ if __name__ == "__main__":
         required=False,
         dest="aws_api",
         default=False,
-        help="Upload onion.db to S3"
+        help="Upload database to S3"
     )
-
     args = parser.parse_args()
+
 
     if args.new_db:
         db.create_new_database()
@@ -111,16 +88,17 @@ if __name__ == "__main__":
         previous_db_hash = ""
 
         while True:
+            util.check_db_diff(args.aws_api)
             check_tor_connection()
             onion.deep_paste_search()
-            check_db(args.aws_api)
+            util.check_db_diff(args.aws_api)
             reddit.redditScraper()
-            check_db(args.aws_api)
+            util.check_db_diff(args.aws_api)
             onion.scrape_known_fresh_onions()
-            check_db(args.aws_api)
+            util.check_db_diff(args.aws_api)
             onion.analyze_onions_from_file("docs/additional_onions.txt")
             os.remove("docs/additional_onions.txt")  # Delete the file after
-            check_db(args.aws_api)
+            util.check_db_diff(args.aws_api)
             util.chill()
 
     elif args.uri is not None:
@@ -136,7 +114,7 @@ if __name__ == "__main__":
             onion.analyze_onions_from_file(args.file_data)
             onion.analyze_onions_from_file("docs/additional_onions.txt")
             os.remove("docs/additional_onions.txt")
-            check_db(args.aws_api)
+            util.check_db_diff(args.aws_api)
         else:
             print(f"[!] File Does Not Exist: {args.file_data}")
             exit(1)
