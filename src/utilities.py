@@ -6,6 +6,7 @@ import requests
 import linecache
 import gzip
 import time
+import json
 import datetime
 import logging
 
@@ -20,7 +21,20 @@ from datetime import date, timedelta
 #GLOBAL
 CONFIG = config.configuration()
 PREVIOUS_DB_HASH = ""
+START_TIME = dt.now()
 DB_NAME = CONFIG.db_name
+
+
+def check_program_runtime():
+    # Upload the db every 10 min.
+    global START_TIME
+    runtime = get_script_runtime_minutes(START_TIME)
+
+    if runtime >= 10:
+        START_TIME = dt.now()
+        logging.info(f"[{dt.now()}]:10 minute db check")
+        if CONFIG.aws_access_key != "":
+            check_db_diff(True)
 
 
 def check_db_diff(using_aws: bool):
@@ -48,8 +62,8 @@ def get_script_runtime_minutes(start_time: datetime) -> float:
     started to the current time
     """
     time_delta = dt.now() - start_time
-    time_delta_hours = divmod(time_delta.total_seconds(), 60)[0]
-    return time_delta_hours
+    time_delta_minutes = divmod(time_delta.total_seconds(), 60)[0]
+    return time_delta_minutes
 
 
 def gzip_file(filepath: str, output_filename: str) -> bool:
@@ -64,6 +78,20 @@ def gzip_file(filepath: str, output_filename: str) -> bool:
     except Exception as e:
         logging.error(f"gzip ERROR:{e}")
         return False
+
+def write_json_to_gzip_stream(json_data: dict, output_filename: str) -> bool:
+    """
+    Takes in a Dictionary and writes it to a gzipped json file
+    """
+    try:
+        json_str = json.dumps(str(json_data)) + "\n"
+        json_bytes = json_str.encode("utf-8")
+        with gzip.open(output_filename, "w") as out:
+            out.write(json_bytes)
+    except json.JSONDecodeError as e:
+        logging.write(f"write_json_to_gzip_stream() JSON Decode Error:{e}")
+    except Exception as e:
+        logging.write(f"write_json_to_gzip_stream() ERROR:{e}")
 
 
 def write_to_s3(filename: str, bucket_name: str, s3_folder_name: str) -> None:
@@ -149,45 +177,3 @@ def deep_paste_enum(onion_source: str) -> list:
         logging.error(f"MD5SUM_ERROR:{e}")
         return md5_list
 
-
-def is_fresh_onion_site(source: str) -> bool:
-    """
-    Checks to see if a domain is a Fresh Onion
-    """
-    try:
-        if not db.is_duplicate_fresh_onion(domain):
-            keyword_index = 0
-            keywords = [
-                "fresh onions",
-                "fresh onion",
-                "freshonion",
-                "freshonions",
-                "new",
-                "fresh",
-                "onions",
-                "onion",
-            ]
-
-            onion_addresses = onion.find_all_onion_base_addresses(source)
-            count = len(onion_addresses)
-
-            # Checks if any known keywords are in source code:
-            for word in keywords:
-                if word.lower() in source.lower():
-                    keyword_index += 1
-
-            # Determine if this site is a Fresh Onion site:
-            if count >= 50 and keyword_index > 2:
-                return True  # This is probably a Fresh Onion site
-            return False  # Naa, this is just a regular onion address.
-        else:
-            return False # The URI already exists, skip it. 
-
-    except Exception as e:
-        exc_type, exc_obj, tb = sys.exc_info()
-        tmp_file = tb.tb_frame
-        lineno = tb.tb_lineno
-        filename = tmp_file.f_code.co_filename
-        linecache.checkcache(filename)
-        line = linecache.getline(filename, lineno, tmp_file.f_globals)
-        logging.error(f"is_fresh_onion_site() ERROR:{e}-linenum:{lineno}-Filename:{filename}-Line:{line}-ExecObj:{exc_obj}")

@@ -14,9 +14,16 @@ from src import utilities as util
 
 import src.reddit as reddit
 import src.onion_analysis as onion
+import src.onion_utilities as o_utils
 
 logname = f"tor_search_{date.today()}.log"
-logging.basicConfig(filename=logname, level=logging.INFO, datefmt="%Y-%m-%d %H:%M:%S")
+logging.basicConfig(
+    filename=logname, 
+    format='%(asctime)s-%(levelname)s-%(message)s',
+    level=logging.INFO, 
+    datefmt="%Y-%m-%d %H:%M:%S"
+    )
+logging.info("Script Started")
 
 
 if __name__ == "__main__":
@@ -60,12 +67,12 @@ if __name__ == "__main__":
         help="Create a fresh/new Database"
     )
     me.add_argument(
-        "-d",
-        "--dedup",
+        "-c",
+        "--clean",
         action="store_true",
         default=False,
         dest="dedup",
-        help="Remove duplicate fresh onion entries"
+        help="Clean the DB by removing duplicates and unworthy domains"
     )
     parser.add_argument(
         "--s3",
@@ -77,13 +84,15 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-
     if args.new_db:
         db.create_new_database()
         exit(0)
 
     if args.dedup:
         db.dedup_fresh_onion_sources()
+        db.dedup_seen_onions()
+        db.delete_news_domains_from_onions()
+        db.vaccum_database()
         exit(0)
 
     if args.scan or args.file_data:
@@ -114,8 +123,10 @@ if __name__ == "__main__":
 
     elif args.uri is not None:
         print(f"[i] Analyzing {args.uri}")
-        result = onion.analyze_onion_address("manual", args.uri)
-        print(f"[i] {result}")
+        if onion.analyze_onion_address("manual", args.uri):
+            print("[i] URI Analysis added to ONIONS table.")
+        else:
+            print(f"[i] Duplicate Entry")
         exit(0)
 
     elif args.file_data is not None:

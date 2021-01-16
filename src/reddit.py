@@ -4,6 +4,7 @@ from tqdm import tqdm
 
 from src import utilities as util
 from src import onion_analysis as onion
+from src import onion_utilities as onion_utils
 from src import config
 
 CONFIG = config.configuration()
@@ -56,14 +57,14 @@ def redditScraper() -> None:
             for submission in subreddit.hot(limit=20):
                 sub_content = submission.selftext
                 sub_link = submission.url
-                onion_addresses = onion_addresses + onion.find_all_onion_addresses(
+                onion_addresses = onion_addresses + onion_utils.find_all_onion_addresses(
                     sub_content
                 )
                 domain_source = str(sub_link).strip()
 
                 # Check the top 15 comments in the Subreddit as well.
                 for comment in submission.comments.list()[:10]:
-                    addresses = onion.find_all_onion_addresses(comment.body)
+                    addresses = onion_utils.find_all_onion_addresses(comment.body)
                     if len(addresses) > 0:
                         for i, item in enumerate(addresses):
                             onion_addresses.append(addresses[i])

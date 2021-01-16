@@ -4,7 +4,8 @@ import sys
 import logging
 
 from src import utilities as util
-from src import db_manager as DB
+from src import db_manager as db
+from src import onion_utilities as onion_utils
 from src import config
 
 from datetime import datetime as dt
@@ -15,137 +16,139 @@ from src.tor_web_requests import get_tor_site_source
 CONFIG = config.configuration()
 START_TIME = dt.now()
 
-def find_all_onion_addresses(source: str) -> list:
-    """
-    finds all .onion domains given HTML source or other text. 
-    """
-    addresses = []
-    dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion(?:\S+|)', source)
-    for address in dirty_addresses:
-        addresses.append(clean_onion_address(address))
-    return addresses
 
 
-def find_all_onion_base_addresses(source: str) -> list:
+def get_onion_data(full_domain: str) -> dict:
     """
-    finds all .onion domains base address given HTML 
-    source or other text. 
+    Pull all the needed data for a single .onion domain to perform
+    a full analysis.
     """
-    addresses = []
-    dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', source)
-    return addresses
+    base_domain = onion_utils.get_onion_base_address(full_domain)
+    full_hash = util.get_sha256(full_domain)
+    base_hash = util.get_sha256(base_domain)
+
+    onion_information = {
+        "full_domain": full_domain, # Holds the full domain name and path
+        "base_domain": base_domain, # Holds only the base domain
+        "full_hash": full_hash,     # Full Domain Hash value
+        "base_hash": base_hash,     # Base Domain Hash Valud
+        "onion_source": None,       # Onions HTML Source code
+        "onion_title": None,        # Onion HTML Title
+        "keywords": None,           # Matched keywords in config.py
+        "keywords_len": None,       # A count of all the keywords found
+        "found_onions": None,       # Additional Onions founds in source
+        "duplicate": False,         # false=Domain is not a duplicate
+        "status": False             # false=failed to pull source/get information
+    }
+    try:
+
+        # Make sure this domain is not a duplicate
+        if not db.is_duplicate_onion(full_hash) and not db.is_duplicate_onion(base_hash):
+            if not onion_utils.is_unworthy_domain(base_domain):
+
+                onion_data = get_tor_site_source(full_domain)
+                onion_source = onion_data["source"]
+                onion_title = onion_data["title"]
+
+                if (onion_source != "timeout" and not onion_utils.is_failed_http_request(onion_title)):
+
+                    keywords_found = onion_utils.search_onion_source_for_keywords(onion_source)
+                    additional_onions = onion_utils.find_all_onion_base_addresses(onion_source)
+
+                    onion_information = {
+                        "full_domain": full_domain,
+                        "base_domain": base_domain,
+                        "full_hash": full_hash,
+                        "base_hash": base_hash,
+                        "onion_source": onion_source,
+                        "onion_title": onion_title,
+                        "keywords": keywords_found,
+                        "keywords_len": len(keywords_found),
+                        "found_onions": additional_onions,
+                        "duplicate": False,
+                        "status": True
+                    }
+        else:
+            onion_information["duplicate"] = True
+
+    except Exception as e:
+        logging.error(f"get_onion_data() ERROR:{e}")
+        exit(1)
+
+    return onion_information
 
 
-def get_onion_base_address(domain: str) -> str:
+def check_if_fresh_onion_domain(onion_information: dict) -> None:
     """
-    extract the base onion address from a domain. 
+    Check if an onion domain is a fresh onion source. If so, add
+    the base domain to the fresh_onions_source table.
     """
-    base_address = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', domain)
-    if len(base_address) > 0:
-        return base_address[0]
-    else: 
-        return domain
+    try:
+        if not db.is_duplicate_fresh_onion(onion_information["base_hash"]):
+            fresh_keywords_index = 0
+            fresh_keywords = [
+                "fresh onions",
+                "fresh onion",
+                "freshonion",
+                "freshonions",
+                "new",
+                "fresh",
+                "onions",
+                "onion",
+            ]
+
+            additional_onions = len(onion_information["found_onions"])
+            source = onion_information["onion_source"].lower()
+            for keyword in fresh_keywords:
+                if keyword in source:
+                    fresh_keywords_index += 1
+
+            if additional_onions >= 75 and fresh_keywords_index > 2:
+                db.fresh_onions_insert(onion_information["base_domain"], onion_information["base_hash"])
+
+    except Exception as e:
+        logging.error(f"check_if_fresh_onion_domain() ERROR:{e}")
 
 
-def clean_onion_address(domain: str) -> str:
-    """
-    Looks for characters we don't really want in our domain and
-    removes them since the .onion regex pulls in things we sometimes
-    do not want. 
-    """
-    if "<" in domain:
-        domain = domain.split("<")[0]
-    if (":80" in domain):
-        domain = domain.split(":80")[0]
-    if (":443" in domain):
-        domain = domain.split(":443")[0]
-    domain = re.sub(r'[()"\'{}\[\]]', '', domain)
-    return domain.strip()
 
-
-def is_unworthy_domain(domain_name: str) -> bool:
-    """
-    Check if domain is a known, not interesting domain
-    """
-    bad_domains = ["facebook", "facebo", "nytimes", "nytime", "twitter.com", "beautybo"]
-    return bool([f for f in bad_domains if (f in str(domain_name))])
-
-
-def is_failed_http_request(site_title: str) -> bool:
-    """
-    Check if the title contains known HTTP errors we don't
-    want to collect
-    """
-    failures = ["Proxy error", "504", "404", "General SOCKS server failure"]
-    return bool([f for f in failures if (f in str(site_title))])
-
-
-def analyze_onion_address(origin_address: str, domain: str) -> None:
+def analyze_onion_address(origin_address: str, domain: str) -> bool:
     """
     takes the origin address when the domain was found and the domain name
     as import. Pulls the domain source, reviews for keyswords, and stores
-    the data in the sqlite DB. 
+    the data in the sqlite db. 
     """
     try:
-        matches = []             # Array to keep matched words.
-        found_addresses = []        # placeholder for newly found onion addresses.
-        domain_hash = util.get_sha256(domain)
-        domain_status = None
+        onion_information = get_onion_data(domain)
 
-        # Verify it's not a duplicate
-        if (not DB.is_duplicate_onion(domain_hash) and not is_unworthy_domain(domain)):
-            
+        if onion_information["status"]: # if the domain lookup was successful:
 
-            tor_dict = get_tor_site_source(domain)
-            tor_source = tor_dict["source"]
-            title = tor_dict["title"]
+            # Add the new domain information to both the ONIONS and SEEN_ONIONS table
+            db.onions_insert(origin_address, onion_information["base_domain"], onion_information["onion_title"], onion_information["base_hash"], str(onion_information["keywords"]), str(onion_information["keywords_len"]), onion_information["onion_source"])
 
-            # check if it's a HTTP Failure
-            if (tor_source != "timeout" and not is_failed_http_request(title)):
+            db.seen_onions_insert(onion_information["base_domain"], onion_information["base_hash"])
 
-                # If the onion address meets the "Fresh Onions" criteria, add to table
-                if (util.is_fresh_onion_site(tor_source)):
-                    base_domain = get_onion_base_address(domain)
-                    base_domain_hash = util.get_sha256(base_domain)
-                    DB.fresh_onions_insert(str(base_domain), str(base_domain_hash))
+            # Check if we have a Fresh Onion Domain:
+            check_if_fresh_onion_domain(onion_information)
 
-                # Search for keywords in source.
-                matches = get_onion_source_keywords(tor_source)
-                DB.onions_insert(origin_address, domain, title, domain_hash,
-                                str(matches), str(len(matches)), tor_source)
-                DB.seen_onions_insert(domain, util.get_sha256(domain))
+            # Check if the user wants to save data to a JSON Gzip file:
+            if CONFIG.save_all_data_to_json_file:
+                util.write_json_to_gzip_stream(onion_information, "onion_hunter.json.gz")
 
-                # add any new onions found
-                found_addresses = find_all_onion_addresses(tor_source)
-                domain_status = "Domain has been Analyzed. ONIONS table contains results"
+            # Save the additional onions we found during get_onion_data()
+            with open("docs/additional_onions.txt", "a+") as f:
+                for address in onion_information["found_onions"]:
+                    f.write(address + "\n")
+            f.close()
 
-            else:
-                DB.seen_onions_insert(domain, util.get_sha256(domain))
-                domain_status = "Domain Timed Out. Doesn't look to be up."
-        else:
-            domain_status = "This is a Duplicate Domain, We've Already Analyzed this"
+        else:   # If the domain lookup failed:
+            if not onion_information["duplicate"]:
+                db.seen_onions_insert(onion_information["base_domain"], onion_information["base_hash"])
 
-        # Save the additional Onions to a file for later analysis
-        with open("docs/additional_onions.txt", "a") as f:
-            for address in found_addresses:
-                f.write(address + "\n")
-        f.close()
+        util.check_program_runtime()
+        return onion_information["status"]
 
-        # Upload the DB every 10 min.
-        global START_TIME
-        runtime = util.get_script_runtime_minutes(START_TIME)
-
-        if runtime >= 10:
-            START_TIME = dt.now()
-            logging.info(f"[{dt.now()}]:10 minute DB check")
-            if CONFIG.aws_access_key != "":
-                util.check_db_diff(True)
-
-        return domain_status
     except Exception as e:
-        exec_type, exec_obj, tb = sys.exc_info()
-        fname = os.path.split(tb.tb_frame.f_code.co_filename)[1]
-        logging.error(f"analyze_onion_address() ERROR:{e}:linenum:{tb.tb_lineno}:{fname}:{exec_type}:{exec_obj}")
+        logging.error(f"analyze_onion_address() ERROR:{e}-DOMAIN:{domain}")
         exit(1)
 
 
@@ -159,8 +162,8 @@ def analyze_onions_from_file(file_path: str) -> None:
         pbar = tqdm(total=len(onion_addresses), desc=f"Analyzing Onion Addresses from {file_path}")
 
         for domain in onion_addresses:
-            origin_address = clean_onion_address(domain)
-            if not origin_address == "":
+            origin_address = onion_utils.clean_onion_address(domain)
+            if origin_address != "":
                 analyze_onion_address("file_import", origin_address)
             pbar.update(1)
 
@@ -171,40 +174,29 @@ def analyze_onions_from_file(file_path: str) -> None:
         exit(1)
 
 
-def get_onion_source_keywords(source_code: str) -> set:
-    """
-    find all the keywords that match the source html code. 
-    """
-    matches = []
-    for word in CONFIG.keywords:
-        if word in source_code:
-            matches.append(word)
-
-    return matches
-
-
 def scrape_known_fresh_onions() -> None:
     """
-    with the .onion address we have denoted as Fresh in the SQLITE3 DB,
+    with the .onion address we have denoted as Fresh in the SQLITE3 db,
     go an analyze each of the sites for new domains. 
     """
-    domains = DB.get_fresh_onion_domains()
+    domains = db.get_fresh_onion_domains()
 
     # Iterate through the known Fresh Onions domains/lists
     for i, origin_address in enumerate(domains):
         origin_address = str(origin_address).replace("('", "").replace("',)", "").strip()
         try:
 
-            data = get_tor_site_source(origin_address)
-            fresh_onions_source = data["source"]
-            new_domains = find_all_onion_addresses(fresh_onions_source)
+            origin_onion_information = get_tor_site_source(origin_address)
+            fresh_onions_source = origin_onion_information["source"]
+            new_domains = onion_utils.find_all_onion_addresses(fresh_onions_source)
 
             # If there are onion addresses found, continue:
-            pbar = tqdm(total=len(new_domains), desc=f"Searching Fresh Onion Domain #{i}")
-            for domain in new_domains:
-                analyze_onion_address(origin_address, domain)
-                pbar.update(1)
-            pbar.close()
+            if origin_onion_information["title"] != "timeout":
+                pbar = tqdm(total=len(new_domains), desc=f"Searching Fresh Onion Domain #{i}")
+                for domain in new_domains:
+                    analyze_onion_address(origin_address, domain)
+                    pbar.update(1)
+                pbar.close()
 
         except Exception as e:
             logging.error(f"scrape_known_fresh_onions() ERROR:{e}")
