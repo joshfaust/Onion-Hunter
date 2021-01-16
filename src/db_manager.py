@@ -236,7 +236,7 @@ def dedup_fresh_onion_sources():
     for uri in uri_list:
         uri = str(uri).split("'")[1]
         cleaned_uri = onion.get_onion_base_address(uri)
-        cleaned_hash = util.get_sha256(uri)
+        cleaned_hash = util.get_sha256(cleaned_uri)
 
         if cleaned_hash not in cleaned_hashes:
             cmd = "INSERT INTO FRESH_ONION_SOURCES (URI, DOMAIN_HASH)  VALUES (?,?)"

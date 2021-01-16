@@ -92,7 +92,7 @@ if __name__ == "__main__":
             check_tor_connection()
             onion.deep_paste_search()
             util.check_db_diff(args.aws_api)
-            reddit.redditScraper()
+            #reddit.redditScraper()
             util.check_db_diff(args.aws_api)
             onion.scrape_known_fresh_onions()
             util.check_db_diff(args.aws_api)

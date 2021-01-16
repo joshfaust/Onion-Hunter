@@ -1,4 +1,5 @@
 import re
+import os
 import sys
 import logging
 
@@ -31,9 +32,7 @@ def find_all_onion_base_addresses(source: str) -> list:
     source or other text. 
     """
     addresses = []
-    dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion)', source)
-    for address in dirty_addresses:
-        addresses.append(clean_onion_address(address))
+    dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', source)
     return addresses
 
 
@@ -134,17 +133,19 @@ def analyze_onion_address(origin_address: str, domain: str) -> None:
 
         # Upload the DB every 20 min.
         global START_TIME
-        runtime = util.get_script_runtime(START_TIME)
-        if runtime >= 0.20:
+        runtime = util.get_script_runtime_minutes(START_TIME)
+
+        if runtime >= 10:
             START_TIME = dt.now()
-            logging.info(f"[{dt.now()}]:20 minute DB check")
+            logging.info(f"[{dt.now()}]:10 minute DB check")
             if CONFIG.aws_access_key != "":
                 util.check_db_diff(True)
 
         return domain_status
     except Exception as e:
         exec_type, exec_obj, tb = sys.exc_info()
-        logging.error(f"analyze_onion_address() ERROR:{e}:linenum:{tb.tb_lineno}")
+        fname = os.path.split(tb.tb_frame.f_code.co_filename)[1]
+        logging.error(f"analyze_onion_address() ERROR:{e}:linenum:{tb.tb_lineno}:{fname}:{exec_type}:{exec_obj}")
         exit(1)
 
 

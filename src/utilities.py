@@ -1,7 +1,9 @@
 import hashlib
 import re
 import os
+import sys
 import requests
+import linecache
 import gzip
 import time
 import datetime
@@ -39,13 +41,13 @@ def check_db_diff(using_aws: bool):
         logging.info("No Change in DB. Continuing")
 
 
-def get_script_runtime(start_time: datetime) -> float:
+def get_script_runtime_minutes(start_time: datetime) -> float:
     """
     Calculates the time difference from when the program
     started to the current time
     """
     time_delta = dt.now() - start_time
-    time_delta_hours = divmod(time_delta.total_seconds(), 3600)[0]
+    time_delta_hours = divmod(time_delta.total_seconds(), 60)[0]
     return time_delta_hours
 
 
@@ -163,7 +165,9 @@ def is_fresh_onion_site(source: str) -> bool:
             "onions",
             "onion",
         ]
-        count = len(onion.find_all_onion_base_addresses(source))
+
+        onion_addresses = onion.find_all_onion_base_addresses(source)
+        count = len(onion_addresses)
 
         # Checks if any known keywords are in source code:
         for word in keywords:
@@ -176,4 +180,10 @@ def is_fresh_onion_site(source: str) -> bool:
         return False  # Naa, this is just a regular onion address.
 
     except Exception as e:
-        logging.error(f"is_fresh_onion_site() ERROR:{e}")
+        exc_type, exc_obj, tb = sys.exc_info()
+        tmp_file = tb.tb_frame
+        lineno = tb.tb_lineno
+        filename = tmp_file.f_code.co_filename
+        linecache.checkcache(filename)
+        line = linecache.getline(filename, lineno, tmp_file.f_globals)
+        logging.error(f"is_fresh_onion_site() ERROR:{e}-linenum:{lineno}-Filename:{filename}-Line:{line}-ExecObj:{exc_obj}")
