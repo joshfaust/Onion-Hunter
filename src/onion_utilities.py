@@ -20,8 +20,8 @@ def find_all_onion_base_addresses(source: str) -> list:
     finds all .onion domains base address given HTML 
     source or other text. 
     """
-    addresses = []
-    dirty_addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', source)
+    addresses = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', source)
+    addresses = list(set(addresses))
     return addresses
 
 

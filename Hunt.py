@@ -117,7 +117,8 @@ if __name__ == "__main__":
             onion.scrape_known_fresh_onions()
             util.check_db_diff(args.aws_api)
             onion.analyze_onions_from_file("docs/additional_onions.txt")
-            os.remove("docs/additional_onions.txt")  # Delete the file after
+            if os.path.exists("docs/additional_onions.txt"):
+                os.remove("docs/additional_onions.txt")  # Delete the file after
             util.check_db_diff(args.aws_api)
             util.chill()
 

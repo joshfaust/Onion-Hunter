@@ -158,16 +158,17 @@ def analyze_onions_from_file(file_path: str) -> None:
     .onion address, analyze that onion. 
     """
     try:
-        onion_addresses = open(file_path, "r").readlines()
-        pbar = tqdm(total=len(onion_addresses), desc=f"Analyzing Onion Addresses from {file_path}")
+        if os.path.exists(file_path):
+            onion_addresses = open(file_path, "r").readlines()
+            pbar = tqdm(total=len(onion_addresses), desc=f"Analyzing Onion Addresses from {file_path}")
 
-        for domain in onion_addresses:
-            origin_address = onion_utils.clean_onion_address(domain)
-            if origin_address != "":
-                analyze_onion_address("file_import", origin_address)
-            pbar.update(1)
+            for domain in onion_addresses:
+                origin_address = onion_utils.clean_onion_address(domain)
+                if origin_address != "":
+                    analyze_onion_address("file_import", origin_address)
+                pbar.update(1)
 
-        pbar.close()
+            pbar.close()
         
     except Exception as e:
         logging.error(f"analyze_onions_from_file() ERROR:{e}")
@@ -210,7 +211,8 @@ def deep_paste_search() -> None:
     """
     md5_uri_list = []
     deep_paste_keys = ['http://depastedihrn3jtw.onion/last.php',
-                       'http://depastedihrn3jtw.onion/top.php']
+                       'http://depastedihrn3jtw.onion/top.php',
+                       "http://nzxj65x32vh2fkhk.onion/trending"]
 
     # Start to enumerate by getting the source then MD5's
     try:
