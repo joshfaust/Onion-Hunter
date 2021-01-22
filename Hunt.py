@@ -95,10 +95,10 @@ if __name__ == "__main__":
         db.vaccum_database()
         exit(0)
 
-    if args.scan or args.file_data:
-        if not is_tor_established():
-            print(f"[!] Not Connected to a TOR Proxy, exiting")
-            exit(1)
+    #if args.scan or args.file_data:
+     #   if not is_tor_established():
+      #      print(f"[!] Not Connected to a TOR Proxy, exiting")
+       #     exit(1)
 
     if args.aws_api:
         if not aws.aws_api_keys_exist():
@@ -116,9 +116,7 @@ if __name__ == "__main__":
             util.check_db_diff(args.aws_api)
             onion.scrape_known_fresh_onions()
             util.check_db_diff(args.aws_api)
-            onion.analyze_onions_from_file("docs/additional_onions.txt")
-            if os.path.exists("docs/additional_onions.txt"):
-                os.remove("docs/additional_onions.txt")  # Delete the file after
+            onion.analyze_unanalyzed_onions()
             util.check_db_diff(args.aws_api)
             util.chill()
 

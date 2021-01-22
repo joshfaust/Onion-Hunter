@@ -9,6 +9,7 @@ import time
 import json
 import datetime
 import logging
+import base64
 
 from src import aws as aws
 from src import config
@@ -161,6 +162,12 @@ def get_string_md5_hash(data: str) -> str:
     """
     hash = hashlib.md5(data.strip().encode()).hexdigest()
     return hash
+
+
+def create_b64_from_string(data: str) -> bytes:
+    data = str(data).strip().encode("utf-8")
+    b64 = base64.encodebytes(data)
+    return b64
 
 
 def deep_paste_enum(onion_source: str) -> list:

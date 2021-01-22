@@ -20,6 +20,7 @@ CREATE TABLE ONIONS
 (ID INTEGER PRIMARY KEY AUTOINCREMENT,
 DATE_FOUND TEXT NOT NULL,
 DOMAIN_SOURCE TEXT NOT NULL,
+FULL_URI TEXT,
 URI TEXT NOT NULL,
 URI_TITLE TEXT,
 DOMAIN_HASH TEXT NOT NULL,
@@ -39,6 +40,12 @@ DATE_FOUND TEXT NOT NULL,
 URI TEXT NOT NULL,
 DOMAIN_HASH TEXT NOT NULL,
 FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));
+
+CREATE TABLE UNANALYZED_ONIONS
+(ID INTEGER PRIMARY KEY AUTOINCREMENT,
+URI TEXT NOT NULL,
+DOMAIN_HASH TEXT NOT NULL);
+
 """
 
 def delete_all_db_data() -> None:
@@ -63,19 +70,20 @@ def delete_all_db_data() -> None:
         logging.error(f"delete_all_db_data() ERROR:{e}")
 
 
-def onions_insert(DS: str, URI: str, UT: str, DH: str, KM: str, KMS: str, IS: str) -> None:
+def onions_insert(DS: str, F_URI: str, URI: str, UT: str, DH: str, KM: str, KMS: str, IS: str) -> None:
     """
     Insert a new row into the ONIONS table
     """
     try:
 
-        cmd = """INSERT INTO ONIONS (DATE_FOUND, DOMAIN_SOURCE, URI, URI_TITLE, DOMAIN_HASH, KEYWORD_MATCHES, KEYWORD_MATCHES_SUM, INDEX_SOURCE) VALUES(?,?,?,?,?,?,?,?)"""
+        cmd = """INSERT INTO ONIONS (DATE_FOUND, DOMAIN_SOURCE, FULL_URI, URI, URI_TITLE, DOMAIN_HASH, KEYWORD_MATCHES, KEYWORD_MATCHES_SUM, INDEX_SOURCE) VALUES(?,?,?,?,?,?,?,?,?)"""
         timestamp = datetime.datetime.now()
         source_code = base64.encodebytes(str(IS).encode("utf-8"))
         if conf.save_html_source_to_db:
             data = (
                 str(timestamp),
                 str(DS),
+                str(F_URI),
                 str(URI),
                 str(UT),
                 str(DH),
@@ -87,6 +95,7 @@ def onions_insert(DS: str, URI: str, UT: str, DH: str, KM: str, KMS: str, IS: st
             data = (
                 str(timestamp),
                 str(DS),
+                str(F_URI),
                 str(URI),
                 str(UT),
                 str(DH),
@@ -177,6 +186,58 @@ def is_duplicate_onion(n_hash: str) -> bool:
         logging.error(f"is_duplicate_onion() ERROR:{e}")
 
 
+def delete_unanalyzed_onion(domain_hash: str) -> bool:
+    """
+    Delete a record from the unanalyzed_onions table
+    """
+    try:
+        cmd = "DELETE FROM UNANALYZED_ONIONS WHERE DOMAIN_HASH = (?)"
+        conn.execute(
+            cmd,
+            (
+                str(domain_hash),
+            ),
+        )
+        conn.commit()
+    except Exception as e:
+        logging.error(f"delete_unanalyzed_onion() ERROR:{e}")
+        return False
+
+
+def add_unanalyzed_onion(uri: str, domain_hash: str) -> bool:
+    """
+    Add a record from the unanalyzed_onions table
+    """
+    try:
+        cmd = "INSERT INTO UNANALYZED_ONIONS (URI, DOMAIN_HASH) VALUES (?,?)"
+        conn.execute(
+            cmd,
+            (
+                str(uri),
+                str(domain_hash),
+            ),
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        logging.error(f"add_unanalyzed_onion() ERROR:{e}")
+        return False
+
+
+def get_all_unanalyzed_onion_domains() -> list:
+    """
+    Returns a list of tuples (uri, domain_hash) for each
+    record in the table. 
+    """
+    try:
+        cmd = "SELECT URI, DOMAIN_HASH FROM UNANALYZED_ONIONS"
+        cur.execute(cmd)
+        data = cur.fetchall()
+        return data
+    except Exception as e:
+        logging.error(f"get_fresh_onion_domains() ERROR:{e}")
+
+
 def is_duplicate_fresh_onion(domain_hash: str) -> bool:
     """
     Check if a hash already exists in the FRESH_ONIONS DB
@@ -201,6 +262,7 @@ def create_new_database() -> None:
     (ID INTEGER PRIMARY KEY AUTOINCREMENT,
     DATE_FOUND TEXT NOT NULL,
     DOMAIN_SOURCE TEXT NOT NULL,
+    FULL_URI TEXT,
     URI TEXT NOT NULL,
     URI_TITLE TEXT,
     DOMAIN_HASH TEXT NOT NULL,
@@ -218,11 +280,17 @@ def create_new_database() -> None:
     URI TEXT NOT NULL,
     DOMAIN_HASH TEXT NOT NULL,
     FOREIGN KEY (DOMAIN_HASH) REFERENCES ONIONS (DOMAIN_HASH));"""
+        table4 = """CREATE TABLE UNANALYZED_ONIONS
+    (ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    URI TEXT NOT NULL,
+    DOMAIN_HASH TEXT NOT NULL);"""
         cur.execute(table1)
         conn.commit()
         cur.execute(table2)
         conn.commit()
         cur.execute(table3)
+        conn.commit()
+        cur.execute(table4)
         conn.commit()
     except Exception as e:
         logging.error(f"create_new_database() ERROR:{e}")

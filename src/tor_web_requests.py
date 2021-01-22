@@ -1,6 +1,7 @@
 import requests
 import logging
 import time
+import subprocess
 
 from bs4 import BeautifulSoup
 from src import config
@@ -87,6 +88,12 @@ def check_tor_connection() -> None:
         while not is_tor_established():
             logging.error(f"Not connected to TOR, sleeping for 30 seconds")
             print("[!] NOT Connected to TOR. Please Re-connect.")
+            
+            # if using a proxy:
+            cmd = "sudo systemctl restart tor polipo"
+            p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            out, err = p.communicate()
+
             time.sleep(30)
             con_attempts += 1
 

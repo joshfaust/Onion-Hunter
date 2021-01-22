@@ -17,7 +17,6 @@ CONFIG = config.configuration()
 START_TIME = dt.now()
 
 
-
 def get_onion_data(full_domain: str) -> dict:
     """
     Pull all the needed data for a single .onion domain to perform
@@ -53,7 +52,7 @@ def get_onion_data(full_domain: str) -> dict:
                 if (onion_source != "timeout" and not onion_utils.is_failed_http_request(onion_title)):
 
                     keywords_found = onion_utils.search_onion_source_for_keywords(onion_source)
-                    additional_onions = onion_utils.find_all_onion_base_addresses(onion_source)
+                    additional_onions = onion_utils.find_all_onion_addresses(onion_source)
 
                     onion_information = {
                         "full_domain": full_domain,
@@ -123,7 +122,7 @@ def analyze_onion_address(origin_address: str, domain: str) -> bool:
         if onion_information["status"]: # if the domain lookup was successful:
 
             # Add the new domain information to both the ONIONS and SEEN_ONIONS table
-            db.onions_insert(origin_address, onion_information["base_domain"], onion_information["onion_title"], onion_information["base_hash"], str(onion_information["keywords"]), str(onion_information["keywords_len"]), onion_information["onion_source"])
+            db.onions_insert(origin_address, onion_information["full_domain"], onion_information["base_domain"], onion_information["onion_title"], onion_information["base_hash"], str(onion_information["keywords"]), str(onion_information["keywords_len"]), onion_information["onion_source"])
 
             db.seen_onions_insert(onion_information["base_domain"], onion_information["base_hash"])
 
@@ -132,13 +131,15 @@ def analyze_onion_address(origin_address: str, domain: str) -> bool:
 
             # Check if the user wants to save data to a JSON Gzip file:
             if CONFIG.save_all_data_to_json_file:
-                util.write_json_to_gzip_stream(onion_information, "onion_hunter.json.gz")
+                holder = onion_information.copy()
+                holder["onion_source"] = util.create_b64_from_string(holder["onion_source"])
+                holder["found_onions"] = []
+                util.write_json_to_gzip_stream(holder, "onion_hunter.json.gz")
+                holder.clear()
 
             # Save the additional onions we found during get_onion_data()
-            with open("docs/additional_onions.txt", "a+") as f:
-                for address in onion_information["found_onions"]:
-                    f.write(address + "\n")
-            f.close()
+            for address in onion_information["found_onions"]:
+                db.add_unanalyzed_onion(address, util.get_sha256(address))
 
         else:   # If the domain lookup failed:
             if not onion_information["duplicate"]:
@@ -147,8 +148,32 @@ def analyze_onion_address(origin_address: str, domain: str) -> bool:
         util.check_program_runtime()
         return onion_information["status"]
 
+    except KeyError as e:
+        logging.error(f"analyze_onion_address() KEY_ERROR:{e}-DOMAIN:{domain}")
+        exit(1)
     except Exception as e:
         logging.error(f"analyze_onion_address() ERROR:{e}-DOMAIN:{domain}")
+        exit(1)
+
+
+def analyze_unanalyzed_onions() -> None:
+    """
+    Obtains a list of tubles (URI, DOMAIN_HASH) from the 
+    UNANALYZED_ONIONS table and analyzes each domain, then
+    deletes the record from the table. 
+    """
+    try:
+        uri_hash_list = db.get_all_unanalyzed_onion_domains()
+        pbar = tqdm(total=len(uri_hash_list), desc="Analyzing Addresses from Unanalyzed_Onions table")
+
+        for uri, domain_hash in uri_hash_list:
+            analyze_onion_address("unanalyzed_onions_table", uri)
+            db.delete_unanalyzed_onion(domain_hash)
+            pbar.update(1)
+        pbar.close()
+
+    except Exception as e:
+        logging.error(f"analyze_unanalyzed_onions() ERROR:{e}")
         exit(1)
 
 
@@ -169,7 +194,7 @@ def analyze_onions_from_file(file_path: str) -> None:
                 pbar.update(1)
 
             pbar.close()
-        
+    
     except Exception as e:
         logging.error(f"analyze_onions_from_file() ERROR:{e}")
         exit(1)
