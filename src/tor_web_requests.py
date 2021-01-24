@@ -87,12 +87,12 @@ def check_tor_connection() -> None:
 
         while not is_tor_established():
             logging.error(f"Not connected to TOR, sleeping for 30 seconds")
-            print("[!] NOT Connected to TOR. Please Re-connect.")
             
             # if using a proxy:
-            cmd = "sudo systemctl restart tor polipo"
-            p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-            out, err = p.communicate()
+            if conf.use_proxy:
+                cmd = "sudo systemctl restart tor polipo"
+                p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                out, err = p.communicate()
 
             time.sleep(30)
             con_attempts += 1
@@ -100,7 +100,6 @@ def check_tor_connection() -> None:
             if con_attempts >= 15:
                 print("[!] 15 Attempts to Re-Connected Failed. Exiting.")
                 exit(0)
-        print("\n[i] TOR Connection Confirmed")
 
     except Exception as e:
         logging.error(f"While checking the TOR connection, an error occured:{e}")

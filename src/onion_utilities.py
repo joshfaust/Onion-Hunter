@@ -29,7 +29,7 @@ def get_onion_base_address(domain: str) -> str:
     """
     extract the base onion address from a domain. 
     """
-    base_address = re.findall(r'(?:https?://|)(?:[-\w.]|(?:%[\da-fA-F]{2}))+\.onion', domain)
+    base_address = re.findall(r'(?:https?://|)(?:[-\w]|(?:%[\da-fA-F]{2}))+\.onion', domain)
     if len(base_address) > 0:
         return base_address[0]
     else: 

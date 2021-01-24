@@ -26,6 +26,10 @@ logging.basicConfig(
 logging.info("Script Started")
 
 
+#db.rename_all_onion_domains_to_base()
+db.dedup_onions()
+exit(0)
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()

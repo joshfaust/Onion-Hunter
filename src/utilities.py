@@ -15,6 +15,7 @@ from src import aws as aws
 from src import config
 from src import onion_analysis as onion
 from src import db_manager as db
+from src.tor_web_requests import check_tor_connection
 
 from datetime import datetime as dt
 from datetime import date, timedelta
@@ -36,6 +37,8 @@ def check_program_runtime():
         logging.info(f"[{dt.now()}]:10 minute db check")
         if CONFIG.aws_access_key != "":
             check_db_diff(True)
+        check_tor_connection()
+    
 
 
 def check_db_diff(using_aws: bool):
@@ -79,6 +82,7 @@ def gzip_file(filepath: str, output_filename: str) -> bool:
     except Exception as e:
         logging.error(f"gzip ERROR:{e}")
         return False
+
 
 def write_json_to_gzip_stream(json_data: dict, output_filename: str) -> bool:
     """
