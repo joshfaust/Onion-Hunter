@@ -56,6 +56,7 @@ def check_db_diff(using_aws: bool):
             os.remove(f"{DB_NAME}.gz")
             logging.info(f"DB Change Detected, uploaded to S3:prev_hash={PREVIOUS_DB_HASH}:cur_hash={current_hash}")
             PREVIOUS_DB_HASH = current_hash
+            write_to_s3("onion_hunter.json.gz", "onion-hunter", "databases")
     else:
         logging.info("No Change in DB. Continuing")
 
@@ -91,7 +92,7 @@ def write_json_to_gzip_stream(json_data: dict, output_filename: str) -> bool:
     try:
         json_str = json.dumps(str(json_data)) + "\n"
         json_bytes = json_str.encode("utf-8")
-        with gzip.open(output_filename, "w") as out:
+        with gzip.open(output_filename, "a+") as out:
             out.write(json_bytes)
     except json.JSONDecodeError as e:
         logging.write(f"write_json_to_gzip_stream() JSON Decode Error:{e}")

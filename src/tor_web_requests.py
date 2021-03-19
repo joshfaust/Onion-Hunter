@@ -98,8 +98,8 @@ def check_tor_connection() -> None:
             con_attempts += 1
 
             if con_attempts >= 15:
-                print("[!] 15 Attempts to Re-Connected Failed. Exiting.")
-                exit(0)
+                print("[!] 15 Attempts to Re-Connected Failed. Sleeping for 30 min")
+                time.sleep(1800)
 
     except Exception as e:
         logging.error(f"While checking the TOR connection, an error occured:{e}")

@@ -83,7 +83,10 @@ def check_if_fresh_onion_domain(onion_information: dict) -> None:
     the base domain to the fresh_onions_source table.
     """
     try:
-        if not db.is_duplicate_fresh_onion(onion_information["base_hash"]):
+        not_fresh_indicators = ["porn", "porno", "sex", "escort"]
+        not_fresh = bool([f for f in not_fresh_indicators if (f in str(onion_information[full_domain]).lower())])
+        
+        if not db.is_duplicate_fresh_onion(onion_information["base_hash"]) and not not_fresh:
             fresh_keywords_index = 0
             fresh_keywords = [
                 "fresh onions",

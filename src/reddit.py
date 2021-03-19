@@ -36,6 +36,8 @@ def reddit_login() -> praw.Reddit:
         logging.error(f"PrawException:{e}")
     except praw.exceptions.APIException as e:
         logging.error(f"Praw_APIException:{e}")
+    except Exception as e:
+        logging.error(f"Reddit_Exception:{e}")
 
 
 def redditScraper() -> None:
@@ -85,6 +87,9 @@ def redditScraper() -> None:
         except AttributeError as e:
             logging.error(f"AttributeError:{e}")
             subreddit_pbar.update(1)
+            continue
+        except Exception as e:
+            logging.error(f"Reddit_Exception:{e}")
             continue
 
     subreddit_pbar.close()
