@@ -95,6 +95,11 @@ It's totally understandable if you don't want TOR to be running in your LAN. As 
 . Create an Ubuntu 18.04 LTS host (I used AWS t2.small)
 . Install the TOR service per https://2019.www.torproject.org/docs/debian.html.en[TOR's Documentation]
 . Install Polipo: `apt-get install polipo`
+[source, bash]
+----
+wget http://archive.ubuntu.com/ubuntu/pool/universe/p/polipo/polipo_1.1.1-8_amd64.deb
+sudo dpkg -i polipo_1.1.1-8_amd64.deb
+----
 . Edit Polipo's config: `/etc/polipo/config`
 [source, conf]
 ----
